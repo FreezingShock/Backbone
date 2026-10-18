@@ -1,19 +1,82 @@
 @import "tailwindcss";
 
-/* Blueprint design tokens. Use them as Tailwind classes, e.g. bg-navy-900, text-cyan-grid. */
+/*
+ * Backbone design system: cartographic, minimal.
+ *
+ * Two themes share one set of semantic tokens. The resolved theme is set as
+ * data-theme on <html> (see index.html and src/theme/useTheme.ts), so every
+ * token below is plain CSS and switches without a rebuild.
+ *   light: warm paper, ink-gray, orange-red accent
+ *   dark:  the blueprint navy and cyan, refined
+ * Use the Tailwind classes (bg-paper, text-ink, border-rule, text-accent ...).
+ * Do not write hex colors in components.
+ */
 @theme {
-  --color-navy-950: #050d18;
-  --color-navy-900: #0b1a2e;
-  --color-navy-800: #12263f;
-  --color-navy-700: #1c3553;
-  --color-cyan-grid: #22d3ee;
-  --color-ink: #d6ecf7;
-  --color-ink-muted: #7f9db8;
-  --color-line: rgb(34 211 238 / 0.28);
-  --color-warn: #f5b841;
-  --color-alert: #f06a6a;
+  --color-paper: var(--c-paper);
+  --color-paper-2: var(--c-paper-2);
+  --color-surface: var(--c-surface);
+  --color-ink: var(--c-ink);
+  --color-ink-2: var(--c-ink-2);
+  --color-ink-3: var(--c-ink-3);
+  --color-rule: var(--c-rule);
+  --color-accent: var(--c-accent);
+  --color-accent-soft: var(--c-accent-soft);
+  --color-warn: var(--c-warn);
+  --color-alert: var(--c-alert);
 
-  --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --font-serif: "IM Fell English", "Iowan Old Style", Palatino, Georgia, serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+
+:root {
+  color-scheme: light;
+  --c-paper: #f2ead8;
+  --c-paper-2: #e8dec6;
+  --c-surface: rgb(248 243 230 / 0.92);
+  --c-ink: #2a2620;
+  --c-ink-2: #5a5043;
+  --c-ink-3: #847a6a;
+  --c-rule: rgb(42 38 32 / 0.26);
+  --c-accent: #b8432a;
+  --c-accent-soft: rgb(184 67 42 / 0.12);
+  --c-warn: #a66a12;
+  --c-alert: #b3261e;
+  --c-shadow: rgb(60 48 30 / 0.22);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --c-paper: #050d18;
+  --c-paper-2: #0b1a2e;
+  --c-surface: rgb(11 26 46 / 0.86);
+  --c-ink: #d6ecf7;
+  --c-ink-2: #a9c4d8;
+  --c-ink-3: #7f9db8;
+  --c-rule: rgb(34 211 238 / 0.28);
+  --c-accent: #22d3ee;
+  --c-accent-soft: rgb(34 211 238 / 0.14);
+  --c-warn: #f5b841;
+  --c-alert: #f06a6a;
+  --c-shadow: rgb(0 0 0 / 0.45);
+}
+
+/* Fallback when the inline script has not run. The app always sets data-theme. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --c-paper: #050d18;
+    --c-paper-2: #0b1a2e;
+    --c-surface: rgb(11 26 46 / 0.86);
+    --c-ink: #d6ecf7;
+    --c-ink-2: #a9c4d8;
+    --c-ink-3: #7f9db8;
+    --c-rule: rgb(34 211 238 / 0.28);
+    --c-accent: #22d3ee;
+    --c-accent-soft: rgb(34 211 238 / 0.14);
+    --c-warn: #f5b841;
+    --c-alert: #f06a6a;
+    --c-shadow: rgb(0 0 0 / 0.45);
+  }
 }
 
 html,
@@ -24,8 +87,36 @@ body,
 }
 
 body {
-  background-color: var(--color-navy-950);
-  color: var(--color-ink);
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background-color: var(--c-paper);
+  color: var(--c-ink);
+  font-family: var(--font-mono);
+  font-size: 13px;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Floating plate: the one surface every panel uses. Thin rule, double border in light mode. */
+.plate {
+  background-color: var(--c-surface);
+  border: 1px solid var(--c-rule);
+  border-radius: 2px;
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.04) inset,
+    0 10px 28px -12px var(--c-shadow);
+  backdrop-filter: blur(6px);
+}
+
+/* Inner keyline, like the frame on a printed map. */
+.plate-frame {
+  outline: 1px solid var(--c-rule);
+  outline-offset: -5px;
+}
+
+/* Thin range slider track, so the terrain slider matches the rest of the UI. */
+input[type="range"] {
+  accent-color: var(--c-accent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
 }
