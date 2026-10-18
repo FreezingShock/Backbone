@@ -3,10 +3,23 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
     <title>Backbone</title>
     <script>
-      // Must run before the Cesium bundle loads. Static assets are copied to /cesium/ by vite.config.ts.
-      window.CESIUM_BASE_URL = '/cesium/';
+      // Set the theme before first paint. Stored choice wins; otherwise follow the OS.
+      (function () {
+        var theme = 'light';
+        try {
+          var stored = localStorage.getItem('backbone-theme');
+          if (stored === 'light' || stored === 'dark') theme = stored;
+          else if (window.matchMedia('(prefers-color-scheme: dark)').matches) theme = 'dark';
+        } catch (e) {
+          if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) theme = 'dark';
+        }
+        document.documentElement.setAttribute('data-theme', theme);
+        // Must run before the Cesium bundle loads. Static assets are copied to /cesium/ by vite.config.ts.
+        window.CESIUM_BASE_URL = '/cesium/';
+      })();
     </script>
   </head>
   <body>

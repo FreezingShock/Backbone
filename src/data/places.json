@@ -1,0 +1,452 @@
+[
+  {
+    "id": "malibu",
+    "name": "Malibu",
+    "kind": "city",
+    "lon": -118.695,
+    "lat": 34.035,
+    "blurb": "Coastal city on the Pacific, along the south side of the Santa Monica Mountains.",
+    "source": "Wikidata Q387047; OpenStreetMap boundary 519 m away"
+  },
+  {
+    "id": "calabasas",
+    "name": "Calabasas",
+    "kind": "city",
+    "lon": -118.65,
+    "lat": 34.13333,
+    "blurb": "City at the northwest edge of the Santa Monica Mountains, on the west side of the San Fernando Valley.",
+    "source": "Wikidata Q629088; OpenStreetMap boundary 1.4 km away"
+  },
+  {
+    "id": "agoura-hills",
+    "name": "Agoura Hills",
+    "kind": "city",
+    "lon": -118.76167,
+    "lat": 34.15333,
+    "blurb": "City in the Conejo Valley, at the north foot of the Santa Monica Mountains.",
+    "source": "Wikidata Q395793; OpenStreetMap boundary 673 m away"
+  },
+  {
+    "id": "westlake-village",
+    "name": "Westlake Village",
+    "kind": "city",
+    "lon": -118.81944,
+    "lat": 34.14194,
+    "blurb": "City in the Conejo Valley, next to the Santa Monica Mountains.",
+    "source": "Wikidata Q474655; OpenStreetMap boundary 1.3 km away"
+  },
+  {
+    "id": "thousand-oaks",
+    "name": "Thousand Oaks",
+    "kind": "city",
+    "lon": -118.875,
+    "lat": 34.18944,
+    "blurb": "Large city in Ventura County and the main city of the Conejo Valley.",
+    "source": "Wikidata Q208447; OpenStreetMap boundary 4.0 km away"
+  },
+  {
+    "id": "santa-monica",
+    "name": "Santa Monica",
+    "kind": "city",
+    "lon": -118.48139,
+    "lat": 34.02194,
+    "blurb": "Beachfront city on Santa Monica Bay, home to the Santa Monica Pier.",
+    "source": "Wikidata Q47164; OpenStreetMap boundary 948 m away"
+  },
+  {
+    "id": "hidden-hills",
+    "name": "Hidden Hills",
+    "kind": "city",
+    "lon": -118.66083,
+    "lat": 34.1675,
+    "blurb": "Small gated city in the hills north of Calabasas.",
+    "source": "Wikidata Q913346; OpenStreetMap boundary 467 m away"
+  },
+  {
+    "id": "topanga",
+    "name": "Topanga",
+    "kind": "town",
+    "lon": -118.60444,
+    "lat": 34.08972,
+    "blurb": "Unincorporated community in Topanga Canyon, which runs from the San Fernando Valley down to the coast.",
+    "source": "Wikidata Q144792; OpenStreetMap place 136 m away"
+  },
+  {
+    "id": "newbury-park",
+    "name": "Newbury Park",
+    "kind": "town",
+    "lon": -118.91,
+    "lat": 34.1842,
+    "blurb": "Community in the Conejo Valley, mostly inside the city of Thousand Oaks.",
+    "source": "Wikidata Q7017236; OpenStreetMap suburb 178 m away"
+  },
+  {
+    "id": "oak-park",
+    "name": "Oak Park",
+    "kind": "town",
+    "lon": -118.75778,
+    "lat": 34.17167,
+    "blurb": "Unincorporated community in the Conejo Valley.",
+    "source": "Wikidata Q1978751; OpenStreetMap boundary 917 m away"
+  },
+  {
+    "id": "lake-sherwood",
+    "name": "Lake Sherwood",
+    "kind": "town",
+    "lon": -118.88806,
+    "lat": 34.12611,
+    "blurb": "Community around a reservoir in the Ventura County hills, near Westlake Village.",
+    "source": "Wikidata Q3458356; OpenStreetMap reservoir 1.7 km away"
+  },
+  {
+    "id": "monte-nido",
+    "name": "Monte Nido",
+    "kind": "town",
+    "lon": -118.687,
+    "lat": 34.0808,
+    "blurb": "Small unincorporated community in the Santa Monica Mountains, near Malibu Creek.",
+    "source": "Wikidata Q6904841; OpenStreetMap hamlet 17 m away"
+  },
+  {
+    "id": "pacific-palisades",
+    "name": "Pacific Palisades",
+    "kind": "neighborhood",
+    "lon": -118.52694,
+    "lat": 34.04806,
+    "blurb": "Coastal bluff neighborhood of Los Angeles, home to Will Rogers State Historic Park.",
+    "source": "Wikidata Q1370207; OpenStreetMap suburb 43 m away"
+  },
+  {
+    "id": "woodland-hills",
+    "name": "Woodland Hills",
+    "kind": "neighborhood",
+    "lon": -118.605,
+    "lat": 34.16833,
+    "blurb": "Neighborhood of Los Angeles in the western San Fernando Valley, where Topanga Canyon Boulevard begins.",
+    "source": "Wikidata Q1337818; OpenStreetMap suburb 78 m away"
+  },
+  {
+    "id": "bell-canyon",
+    "name": "Bell Canyon",
+    "kind": "neighborhood",
+    "lon": -118.6875,
+    "lat": 34.20806,
+    "blurb": "Canyon community in Ventura County, north of Woodland Hills.",
+    "source": "Wikidata Q3458662; OpenStreetMap neighbourhood 244 m away"
+  },
+  {
+    "id": "sandstone-peak",
+    "name": "Sandstone Peak",
+    "kind": "peak",
+    "lon": -118.932,
+    "lat": 34.1203,
+    "blurb": "Highest peak in the Santa Monica Mountains, at about 3,100 feet.",
+    "source": "Wikidata Q7416955; OpenStreetMap viewpoint 12 m away"
+  },
+  {
+    "id": "saddle-peak",
+    "name": "Saddle Peak",
+    "kind": "peak",
+    "lon": -118.65506,
+    "lat": 34.07803,
+    "blurb": "Peak in the Santa Monica Mountains, with a trail to the summit.",
+    "source": "OpenStreetMap natural=peak; Wikidata Q7397711 366 m away"
+  },
+  {
+    "id": "castro-peak",
+    "name": "Castro Peak",
+    "kind": "peak",
+    "lon": -118.78545,
+    "lat": 34.08563,
+    "blurb": "Peak above Malibu, where a historic fire lookout once stood.",
+    "source": "OpenStreetMap natural=peak; Wikidata Q5050790 46 m away"
+  },
+  {
+    "id": "boney-mountain",
+    "name": "Boney Mountain",
+    "kind": "peak",
+    "lon": -118.95972,
+    "lat": 34.11161,
+    "blurb": "Peak in the Boney Mountain Wilderness, near Circle X Ranch.",
+    "source": "OpenStreetMap natural=peak; Wikidata Q35728691 51 m away"
+  },
+  {
+    "id": "mugu-peak",
+    "name": "Mugu Peak",
+    "kind": "peak",
+    "lon": -119.05504,
+    "lat": 34.09265,
+    "blurb": "Tall peak in Point Mugu State Park.",
+    "source": "OpenStreetMap natural=peak; Wikidata Q49055604 34 m away"
+  },
+  {
+    "id": "topanga-canyon",
+    "name": "Topanga Canyon",
+    "kind": "canyon",
+    "lon": -118.605,
+    "lat": 34.1025,
+    "blurb": "Long canyon from the San Fernando Valley to the coast, with Topanga Creek along its floor.",
+    "source": "Wikidata Q85877798"
+  },
+  {
+    "id": "latigo-canyon",
+    "name": "Latigo Canyon",
+    "kind": "canyon",
+    "lon": -118.75278,
+    "lat": 34.03111,
+    "blurb": "Canyon and road in the Santa Monica Mountains, above Malibu.",
+    "source": "Wikidata Q49832976"
+  },
+  {
+    "id": "encinal-canyon",
+    "name": "Encinal Canyon",
+    "kind": "canyon",
+    "lon": -118.87,
+    "lat": 34.03667,
+    "blurb": "Canyon near Malibu, on Encinal Canyon Road. The app tracks its closures.",
+    "source": "Wikidata Q49800431; OpenStreetMap stream 901 m away"
+  },
+  {
+    "id": "corral-canyon",
+    "name": "Corral Canyon",
+    "kind": "canyon",
+    "lon": -118.73472,
+    "lat": 34.03472,
+    "blurb": "Canyon in Malibu, with Corral Canyon Park.",
+    "source": "Wikidata Q21593045; OpenStreetMap park 520 m away"
+  },
+  {
+    "id": "las-virgenes-canyon",
+    "name": "Las Virgenes Canyon",
+    "kind": "canyon",
+    "lon": -118.70222,
+    "lat": 34.17222,
+    "blurb": "Canyon along Las Virgenes Road, between Calabasas and the Agoura Hills area.",
+    "source": "Wikidata Q49832881"
+  },
+  {
+    "id": "malibu-creek-state-park",
+    "name": "Malibu Creek State Park",
+    "kind": "park",
+    "lon": -118.711,
+    "lat": 34.1008,
+    "blurb": "State park with creek pools and sandstone rock formations. M*A*S*H was filmed here.",
+    "source": "Wikidata Q6743398; OpenStreetMap nature_reserve 3.7 km away"
+  },
+  {
+    "id": "point-mugu-state-park",
+    "name": "Point Mugu State Park",
+    "kind": "park",
+    "lon": -119.02103,
+    "lat": 34.10692,
+    "blurb": "Large park running from the coast at Point Mugu into the mountains, with Sycamore Canyon.",
+    "source": "OpenStreetMap state_park; Wikidata Q7208093 2.1 km away"
+  },
+  {
+    "id": "topanga-state-park",
+    "name": "Topanga State Park",
+    "kind": "park",
+    "lon": -118.549,
+    "lat": 34.0953,
+    "blurb": "Large park in the Topanga hills, with trails from the Trippet Ranch trailhead.",
+    "source": "Wikidata Q14684149; OpenStreetMap nature_reserve 1.4 km away"
+  },
+  {
+    "id": "circle-x-ranch",
+    "name": "Circle X Ranch",
+    "kind": "park",
+    "lon": -118.9364,
+    "lat": 34.109,
+    "blurb": "Ranch and trail hub in the Santa Monica Mountains, managed by the National Park Service.",
+    "source": "Wikidata Q5121439; OpenStreetMap national_park 1.8 km away"
+  },
+  {
+    "id": "paramount-ranch",
+    "name": "Paramount Ranch",
+    "kind": "park",
+    "lon": -118.75869,
+    "lat": 34.12151,
+    "blurb": "Former movie western set, now a National Park Service park with trails.",
+    "source": "OpenStreetMap protected_area"
+  },
+  {
+    "id": "cheeseboro-canyon",
+    "name": "Cheeseboro Canyon",
+    "kind": "park",
+    "lon": -118.73417,
+    "lat": 34.15167,
+    "blurb": "Park in the Simi Hills, with oak woodland and trails, north of Agoura Hills.",
+    "source": "Wikidata Q49787202"
+  },
+  {
+    "id": "solstice-canyon",
+    "name": "Solstice Canyon",
+    "kind": "park",
+    "lon": -118.7548,
+    "lat": 34.0391,
+    "blurb": "Park in Malibu with a shaded trail past old house ruins and a waterfall.",
+    "source": "Wikidata Q7558877; OpenStreetMap nature_reserve 554 m away"
+  },
+  {
+    "id": "charmlee-wilderness-park",
+    "name": "Charmlee Wilderness Park",
+    "kind": "park",
+    "lon": -118.884,
+    "lat": 34.05358,
+    "blurb": "Park above Malibu, with coastal views and grassland trails.",
+    "source": "OpenStreetMap nature_reserve"
+  },
+  {
+    "id": "will-rogers-state-historic-park",
+    "name": "Will Rogers State Historic Park",
+    "kind": "park",
+    "lon": -118.51222,
+    "lat": 34.05611,
+    "blurb": "Former ranch of the humorist Will Rogers, with polo fields and trails.",
+    "source": "Wikidata Q8003060; OpenStreetMap nature_reserve 184 m away"
+  },
+  {
+    "id": "zuma-beach",
+    "name": "Zuma Beach",
+    "kind": "beach",
+    "lon": -118.83103,
+    "lat": 34.02144,
+    "blurb": "Long sandy beach in Malibu, with lifeguards and parking.",
+    "source": "OpenStreetMap natural=beach; Wikidata Q8075217 222 m away"
+  },
+  {
+    "id": "leo-carrillo-state-beach",
+    "name": "Leo Carrillo State Beach",
+    "kind": "beach",
+    "lon": -118.93926,
+    "lat": 34.04417,
+    "blurb": "Beach and park near the Ventura County line, with tide pools at low tide.",
+    "source": "OpenStreetMap natural=beach"
+  },
+  {
+    "id": "el-matador-state-beach",
+    "name": "El Matador State Beach",
+    "kind": "beach",
+    "lon": -118.87449,
+    "lat": 34.03798,
+    "blurb": "Small cove beach with rock stacks, reached by a stairway down the bluff.",
+    "source": "OpenStreetMap natural=beach; Wikidata Q49486187 765 m away"
+  },
+  {
+    "id": "will-rogers-state-beach",
+    "name": "Will Rogers State Beach",
+    "kind": "beach",
+    "lon": -118.55318,
+    "lat": 34.0385,
+    "blurb": "Long sandy beach between Santa Monica and Topanga, in Pacific Palisades.",
+    "source": "OpenStreetMap natural=beach; Wikidata Q8003058 643 m away"
+  },
+  {
+    "id": "topanga-state-beach",
+    "name": "Topanga State Beach",
+    "kind": "beach",
+    "lon": -118.5815,
+    "lat": 34.039,
+    "blurb": "Beach at the mouth of Topanga Canyon.",
+    "source": "Wikidata Q131926929"
+  },
+  {
+    "id": "paradise-cove",
+    "name": "Paradise Cove",
+    "kind": "beach",
+    "lon": -118.78426,
+    "lat": 34.02084,
+    "blurb": "Small beach cove in Malibu, known for its pier and restaurant.",
+    "source": "OpenStreetMap natural=bay; Wikidata Q49387479 8 m away"
+  },
+  {
+    "id": "malibu-lagoon-state-beach",
+    "name": "Malibu Lagoon State Beach",
+    "kind": "beach",
+    "lon": -118.679,
+    "lat": 34.0333,
+    "blurb": "Tidal lagoon where Malibu Creek meets the ocean, next to the Adamson House.",
+    "source": "Wikidata Q6743409; OpenStreetMap nature_reserve 232 m away"
+  },
+  {
+    "id": "trippet-ranch",
+    "name": "Trippet Ranch",
+    "kind": "trailhead",
+    "lon": -118.58733,
+    "lat": 34.09318,
+    "blurb": "Main trailhead for Topanga State Park, on Entrada Road.",
+    "source": "OpenStreetMap highway=trailhead"
+  },
+  {
+    "id": "point-dume",
+    "name": "Point Dume",
+    "kind": "landmark",
+    "lon": -118.80611,
+    "lat": 34.00167,
+    "blurb": "Rocky headland in Malibu, with coastal views and a state beach below it.",
+    "source": "Wikidata Q49062846; OpenStreetMap natural=peak 53 m away"
+  },
+  {
+    "id": "pepperdine-university",
+    "name": "Pepperdine University",
+    "kind": "landmark",
+    "lon": -118.70758,
+    "lat": 34.03868,
+    "blurb": "Private university on bluffs above the Malibu coast.",
+    "source": "Wikidata Q117876; OpenStreetMap university 506 m away"
+  },
+  {
+    "id": "getty-villa",
+    "name": "Getty Villa",
+    "kind": "landmark",
+    "lon": -118.565,
+    "lat": 34.045,
+    "blurb": "Museum modeled on a Roman villa, with gardens above Pacific Palisades.",
+    "source": "Wikidata Q180401; OpenStreetMap building 51 m away"
+  },
+  {
+    "id": "adamson-house",
+    "name": "Adamson House",
+    "kind": "landmark",
+    "lon": -118.68047,
+    "lat": 34.03449,
+    "blurb": "1930s tile-decorated house at Malibu Lagoon, now a museum.",
+    "source": "OpenStreetMap tourism=museum; Wikidata Q4680503 197 m away"
+  },
+  {
+    "id": "escondido-falls",
+    "name": "Escondido Falls",
+    "kind": "landmark",
+    "lon": -118.78014,
+    "lat": 34.04233,
+    "blurb": "Waterfall in Malibu, reached by a trail up Escondido Canyon.",
+    "source": "OpenStreetMap waterfall"
+  },
+  {
+    "id": "rock-pool",
+    "name": "Rock Pool",
+    "kind": "landmark",
+    "lon": -118.72983,
+    "lat": 34.0964,
+    "blurb": "Natural pool in Malibu Creek State Park, popular for swimming.",
+    "source": "OpenStreetMap water=pond"
+  },
+  {
+    "id": "malibu-pier",
+    "name": "Malibu Pier",
+    "kind": "landmark",
+    "lon": -118.67612,
+    "lat": 34.03644,
+    "blurb": "Pier on the Malibu coast, next to Malibu Lagoon.",
+    "source": "Wikidata Q114275386; OpenStreetMap man_made=pier 2 m away"
+  },
+  {
+    "id": "santa-monica-pier",
+    "name": "Santa Monica Pier",
+    "kind": "landmark",
+    "lon": -118.4974,
+    "lat": 34.0089,
+    "blurb": "Pier and amusement park at the end of Colorado Avenue in Santa Monica.",
+    "source": "OpenStreetMap man_made=pier; Wikidata Q595439 116 m away"
+  }
+]

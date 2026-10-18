@@ -1,37 +1,18 @@
-import * as Cesium from 'cesium';
-import { PLACES } from '../map/places';
-import type { LayerHandle, MapLayer } from './types';
+// Cities, towns and neighborhoods, drawn as names. The layer panel calls this "Towns and cities".
+import { SETTLEMENT_KINDS, PLACES } from '../map/places';
+import { mountPlaceMarkers } from './placeMarkers';
+import type { MapLayer } from './types';
 
 export const placeLabelsLayer: MapLayer = {
   id: 'place-labels',
-  label: 'Place names',
-  group: 'Base',
+  label: 'Towns and cities',
+  group: 'Places',
   defaultVisible: true,
-  mount(viewer): LayerHandle {
-    const labels = new Cesium.LabelCollection({ scene: viewer.scene });
-    for (const place of PLACES) {
-      labels.add({
-        position: Cesium.Cartesian3.fromDegrees(place.lon, place.lat),
-        text: place.name.toUpperCase(),
-        font: '13px ui-monospace, Menlo, Consolas, monospace',
-        fillColor: Cesium.Color.fromCssColorString('#d6ecf7'),
-        outlineColor: Cesium.Color.fromCssColorString('#050d18'),
-        outlineWidth: 3,
-        style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-        verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-        heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-        disableDepthTestDistance: Number.POSITIVE_INFINITY,
-      });
-    }
-    viewer.scene.primitives.add(labels);
-
-    return {
-      show(visible) {
-        labels.show = visible;
-      },
-      destroy() {
-        if (!viewer.isDestroyed()) viewer.scene.primitives.remove(labels);
-      },
-    };
+  mount(viewer, look) {
+    return mountPlaceMarkers(
+      viewer,
+      look,
+      PLACES.filter((place) => SETTLEMENT_KINDS.includes(place.kind)),
+    );
   },
 };

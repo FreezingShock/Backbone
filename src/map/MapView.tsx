@@ -2,10 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import * as Cesium from 'cesium';
 import { config, MAX_IMAGERY_LEVEL } from '../config';
 import type { LayerHandle, MapLayer } from '../layers/types';
+import type { MapLook } from './look';
+import { createHillshade } from './hillshade';
 import { attachFreeFly } from './freeFly';
-import { attachRenderQuality } from './renderQuality';
+import { createOpenTerrain } from './openTerrain';
 import type { Place } from './places';
-import type { BasemapStyle, CameraMode, RuntimeStatus } from './types';
+import { attachRenderQuality } from './renderQuality';
+import type { CameraMode, RuntimeStatus } from './types';
 
 export interface FlyTarget {
   place: Place;
@@ -16,38 +19,38 @@ export interface FlyTarget {
 export interface MapViewProps {
   layers: MapLayer[];
   visibility: Record<string, boolean>;
-  basemap: BasemapStyle;
+  /** Colors and imagery settings for the current theme and map style. See src/map/look.ts. */
+  look: MapLook;
   exaggeration: number;
   cameraMode: CameraMode;
   /** Free-fly speed multiplier from the UI. Read every frame, so changing it does not restart free-fly. */
   cameraSpeed: number;
   flyTo: FlyTarget;
   onStatus: (status: Partial<RuntimeStatus>) => void;
+  /** Receives the Cesium viewer once it exists, and null when it is torn down. */
+  onViewer: (viewer: Cesium.Viewer | null) => void;
 }
 
-const NAVY_GLOBE = '#0b1a2e';
-const NAVY_SPACE = '#050d18';
-
-// Blueprint: desaturated and dimmed imagery. Satellite: imagery as-is.
-const IMAGERY_LOOK: Record<BasemapStyle, { saturation: number; brightness: number; contrast: number }> = {
-  blueprint: { saturation: 0, brightness: 0.5, contrast: 1.25 },
-  satellite: { saturation: 1, brightness: 1, contrast: 1 },
-};
+const LABEL_FONTS = ['17px "IM Fell English"', '12px "IBM Plex Mono"'];
 
 export function MapView({
   layers,
   visibility,
-  basemap,
+  look,
   exaggeration,
   cameraMode,
   cameraSpeed,
   flyTo,
   onStatus,
+  onViewer,
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [viewer, setViewer] = useState<Cesium.Viewer | null>(null);
   const [imagery, setImagery] = useState<Cesium.ImageryLayer | null>(null);
+  // Bumped when layers finish mounting, so visibility is applied to the new handles.
+  const [mountedVersion, setMountedVersion] = useState(0);
   const handlesRef = useRef(new Map<string, LayerHandle>());
+  const lookRef = useRef(look);
   const statusRef = useRef(onStatus);
   const speedRef = useRef(cameraSpeed);
 
@@ -82,9 +85,6 @@ export function MapView({
     });
 
     const { scene } = created;
-    scene.backgroundColor = Cesium.Color.fromCssColorString(NAVY_SPACE);
-    scene.globe.baseColor = Cesium.Color.fromCssColorString(NAVY_GLOBE);
-    scene.globe.enableLighting = true; // Shading from the terrain gives a hillshade feel.
     scene.globe.depthTestAgainstTerrain = true;
     if (scene.skyAtmosphere) scene.skyAtmosphere.show = false;
     scene.globe.showGroundAtmosphere = false;
@@ -99,6 +99,10 @@ export function MapView({
       created.destroy();
     };
   }, []);
+
+  useEffect(() => {
+    onViewer(viewer);
+  }, [viewer, onViewer]);
 
   // Imagery: USGS by default, no token needed.
   useEffect(() => {
@@ -123,13 +127,19 @@ export function MapView({
     };
   }, [viewer]);
 
-  // Terrain: Cesium World Terrain when an ion token is set, otherwise flat.
+  // Terrain: Cesium World Terrain with an ion token. Without one, open elevation tiles (no key).
   useEffect(() => {
     if (!viewer) return;
     if (!config.cesiumIonToken) {
-      statusRef.current({ terrain: 'flat' });
-      return;
+      const provider = createOpenTerrain();
+      viewer.terrainProvider = provider;
+      statusRef.current({ terrain: 'open' });
+      const stopListening = provider.errorEvent.addEventListener(() => statusRef.current({ terrain: 'error' }));
+      return () => {
+        stopListening();
+      };
     }
+
     let cancelled = false;
     statusRef.current({ terrain: 'loading' });
 
@@ -148,14 +158,28 @@ export function MapView({
     };
   }, [viewer]);
 
+  // Map look: background, globe color, lighting, imagery, then every layer's colors.
+  useEffect(() => {
+    lookRef.current = look;
+    if (!viewer) return;
+    const { scene } = viewer;
+    scene.backgroundColor = Cesium.Color.fromCssColorString(look.space);
+    scene.globe.baseColor = Cesium.Color.fromCssColorString(look.globe);
+    scene.globe.enableLighting = look.lighting; // Shading from the terrain gives the hillshade look.
+    for (const handle of handlesRef.current.values()) handle.restyle(look);
+    scene.requestRender();
+  }, [viewer, look]);
+
   useEffect(() => {
     if (!imagery) return;
-    const look = IMAGERY_LOOK[basemap];
-    imagery.saturation = look.saturation;
-    imagery.brightness = look.brightness;
-    imagery.contrast = look.contrast;
+    const { show, saturation, brightness, contrast, alpha } = look.imagery;
+    imagery.show = show;
+    imagery.saturation = saturation;
+    imagery.brightness = brightness;
+    imagery.contrast = contrast;
+    imagery.alpha = alpha;
     viewer?.scene.requestRender();
-  }, [imagery, basemap, viewer]);
+  }, [imagery, look, viewer]);
 
   useEffect(() => {
     if (!viewer) return;
@@ -163,12 +187,34 @@ export function MapView({
     viewer.scene.requestRender();
   }, [viewer, exaggeration]);
 
-  // Mount layers once per viewer. Visibility is applied in the next effect.
+  // Relief: hillshade drawn as an imagery layer on top of the (hidden) photo.
+  const shadeColor = look.hillshade?.shadow;
+  const highlightColor = look.hillshade?.highlight;
+  useEffect(() => {
+    if (!viewer || !shadeColor || !highlightColor) return;
+    const layer = viewer.imageryLayers.addImageryProvider(
+      createHillshade({ shadow: shadeColor, highlight: highlightColor }),
+    );
+    return () => {
+      if (!viewer.isDestroyed()) viewer.imageryLayers.remove(layer, true);
+    };
+  }, [viewer, shadeColor, highlightColor]);
+
+  // Mount layers once per viewer, after the label fonts are ready. Canvas labels need the font at creation.
   useEffect(() => {
     if (!viewer) return;
+    let cancelled = false;
     const handles = handlesRef.current;
-    for (const layer of layers) handles.set(layer.id, layer.mount(viewer));
+    const fontsReady = Promise.all(LABEL_FONTS.map((font) => document.fonts.load(font))).catch(() => undefined);
+
+    void fontsReady.then(() => {
+      if (cancelled || viewer.isDestroyed()) return;
+      for (const layer of layers) handles.set(layer.id, layer.mount(viewer, lookRef.current));
+      setMountedVersion((version) => version + 1);
+    });
+
     return () => {
+      cancelled = true;
       for (const handle of handles.values()) handle.destroy();
       handles.clear();
     };
@@ -180,7 +226,7 @@ export function MapView({
       handlesRef.current.get(layer.id)?.show(visibility[layer.id] ?? layer.defaultVisible);
     }
     viewer.scene.requestRender();
-  }, [viewer, layers, visibility]);
+  }, [viewer, layers, visibility, mountedVersion]);
 
   useEffect(() => {
     if (!viewer) return;

@@ -16,6 +16,7 @@ Last checked: 2026-10-18. Only open data is used by default. Rows marked "not te
 | Aerial photos | USDA NAIP through USGS | ImageServer or bulk download | Static, updated every few years | Not tested live |
 | Roads, labels | Census TIGER/Line 2024 roads for LA County (06037) and Ventura County (06111), built by `node scripts/build-roads.mjs --tiger <dir>` into `public/data/roads.geojson` | Shapefile zips from `https://www2.census.gov/geo/tiger/TIGER2024/ROADS/`, clipped to the Santa Monica Mountains box. Public domain. | Refresh by hand, then commit the output | Built 2026-10-18 from the zips. Overpass was unusable from the build sandbox that day (resets, HTTP 500, and one mirror returned empty data), so `scripts/build-roads.mjs` without `--tiger` is untested live. |
 | Trails | Not yet sourced. TIGER has no hiking trails. OSM trails need Overpass or a Geofabrik extract. | Gap | Unknown | Gap |
+| Place names and points of interest | Wikidata (CC0) and OpenStreetMap (ODbL). Each coordinate comes from one of them. Where both have a point, the distance between them is recorded. | Wikidata entity IDs and OSM node or area tags, recorded per place in `src/data/places.json`. Built once; not fetched by the app. | Static | Checked 2026-10-18 for 50 places (Wikidata API and Nominatim). Blurbs are written for this app. |
 | 3D Google tiles (optional) | Map Tiles API, Photorealistic 3D Tiles | Google Cloud key with billing enabled | Continuous | Pricing page read 2026-10-16 |
 
 ## Road tiers
@@ -59,3 +60,5 @@ Road names are labeled on tiers 1 and 2 only. Labels are spaced apart and shown 
 - [Map Tiles API usage and billing](https://developers.google.com/maps/documentation/tile/usage-and-billing)
 - [Caltrans emergency road closures (data.gov)](https://catalog.data.gov/dataset/caltrans-emergency-road-closures)
 - [Caltrans Lane Closure System docs](https://cwwp2.dot.ca.gov/documentation/lcs/lcs.htm)
+- [Wikidata](https://www.wikidata.org/) (CC0): place coordinates, IDs in `src/data/places.json`
+- [OpenStreetMap](https://www.openstreetmap.org/copyright) (ODbL): place coordinates. Attribution is shown in the Points of interest layer note.
