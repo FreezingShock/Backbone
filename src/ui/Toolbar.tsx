@@ -1,3 +1,4 @@
+import { FREEFLY_SPEED } from '../map/freeFly';
 import { PLACES, type Place } from '../map/places';
 import type { BasemapStyle, CameraMode } from '../map/types';
 import { Chip, Panel } from './primitives';
@@ -7,10 +8,20 @@ export interface ToolbarProps {
   onBasemap: (value: BasemapStyle) => void;
   cameraMode: CameraMode;
   onCameraMode: (value: CameraMode) => void;
+  cameraSpeed: number;
+  onCameraSpeed: (value: number) => void;
   onGoTo: (place: Place) => void;
 }
 
-export function Toolbar({ basemap, onBasemap, cameraMode, onCameraMode, onGoTo }: ToolbarProps) {
+export function Toolbar({
+  basemap,
+  onBasemap,
+  cameraMode,
+  onCameraMode,
+  cameraSpeed,
+  onCameraSpeed,
+  onGoTo,
+}: ToolbarProps) {
   return (
     <header className="absolute top-4 left-4 right-4 flex flex-wrap items-start gap-3 pointer-events-none">
       <Panel className="pointer-events-auto" bodyClassName="flex items-center gap-3 p-2">
@@ -43,11 +54,30 @@ export function Toolbar({ basemap, onBasemap, cameraMode, onCameraMode, onGoTo }
             Satellite
           </Chip>
         </div>
+        {cameraMode === 'freefly' && (
+          <>
+            <span className="h-4 w-px bg-line" aria-hidden />
+            <label className="flex items-center gap-2 font-mono text-[11px] text-ink-muted">
+              Speed
+              <input
+                type="range"
+                min={FREEFLY_SPEED.min}
+                max={FREEFLY_SPEED.max}
+                step={FREEFLY_SPEED.step}
+                value={cameraSpeed}
+                onChange={(event) => onCameraSpeed(Number(event.target.value))}
+                className="w-24 accent-cyan-grid"
+                aria-label="Free-fly speed"
+              />
+              <span className="w-10 tabular-nums text-ink">{cameraSpeed.toFixed(2)}×</span>
+            </label>
+          </>
+        )}
       </Panel>
 
       {cameraMode === 'freefly' && (
         <p className="pointer-events-auto font-mono text-[11px] tracking-wide text-ink-muted">
-          WASD move · Q/E down/up · Shift fast · drag to look
+          WASD move · Q/E down/up · Shift boost · drag to look
         </p>
       )}
     </header>

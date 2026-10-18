@@ -3,6 +3,7 @@ import * as Cesium from 'cesium';
 import { config, MAX_IMAGERY_LEVEL } from '../config';
 import type { LayerHandle, MapLayer } from '../layers/types';
 import { attachFreeFly } from './freeFly';
+import { attachRenderQuality } from './renderQuality';
 import type { Place } from './places';
 import type { BasemapStyle, CameraMode, RuntimeStatus } from './types';
 
@@ -18,6 +19,8 @@ export interface MapViewProps {
   basemap: BasemapStyle;
   exaggeration: number;
   cameraMode: CameraMode;
+  /** Free-fly speed multiplier from the UI. Read every frame, so changing it does not restart free-fly. */
+  cameraSpeed: number;
   flyTo: FlyTarget;
   onStatus: (status: Partial<RuntimeStatus>) => void;
 }
@@ -37,6 +40,7 @@ export function MapView({
   basemap,
   exaggeration,
   cameraMode,
+  cameraSpeed,
   flyTo,
   onStatus,
 }: MapViewProps) {
@@ -45,10 +49,15 @@ export function MapView({
   const [imagery, setImagery] = useState<Cesium.ImageryLayer | null>(null);
   const handlesRef = useRef(new Map<string, LayerHandle>());
   const statusRef = useRef(onStatus);
+  const speedRef = useRef(cameraSpeed);
 
   useEffect(() => {
     statusRef.current = onStatus;
   });
+
+  useEffect(() => {
+    speedRef.current = cameraSpeed;
+  }, [cameraSpeed]);
 
   // Create the viewer once. Basemap and terrain are added after it exists.
   useEffect(() => {
@@ -79,6 +88,8 @@ export function MapView({
     scene.globe.depthTestAgainstTerrain = true;
     if (scene.skyAtmosphere) scene.skyAtmosphere.show = false;
     scene.globe.showGroundAtmosphere = false;
+    // Draw only when something changes. attachRenderQuality adds a heartbeat so nothing stalls.
+    scene.requestRenderMode = true;
 
     setViewer(created);
 
@@ -143,10 +154,13 @@ export function MapView({
     imagery.saturation = look.saturation;
     imagery.brightness = look.brightness;
     imagery.contrast = look.contrast;
-  }, [imagery, basemap]);
+    viewer?.scene.requestRender();
+  }, [imagery, basemap, viewer]);
 
   useEffect(() => {
-    if (viewer) viewer.scene.verticalExaggeration = exaggeration;
+    if (!viewer) return;
+    viewer.scene.verticalExaggeration = exaggeration;
+    viewer.scene.requestRender();
   }, [viewer, exaggeration]);
 
   // Mount layers once per viewer. Visibility is applied in the next effect.
@@ -161,14 +175,21 @@ export function MapView({
   }, [viewer, layers]);
 
   useEffect(() => {
+    if (!viewer) return;
     for (const layer of layers) {
       handlesRef.current.get(layer.id)?.show(visibility[layer.id] ?? layer.defaultVisible);
     }
+    viewer.scene.requestRender();
   }, [viewer, layers, visibility]);
 
   useEffect(() => {
+    if (!viewer) return;
+    return attachRenderQuality(viewer);
+  }, [viewer]);
+
+  useEffect(() => {
     if (!viewer || cameraMode !== 'freefly') return;
-    return attachFreeFly(viewer);
+    return attachFreeFly(viewer, () => speedRef.current);
   }, [viewer, cameraMode]);
 
   useEffect(() => {
@@ -182,6 +203,7 @@ export function MapView({
         duration: 2.5,
       },
     );
+    viewer.scene.requestRender();
   }, [viewer, flyTo]);
 
   return <div ref={containerRef} className="absolute inset-0" />;

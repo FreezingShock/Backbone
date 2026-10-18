@@ -3,6 +3,7 @@ import { MapView, type FlyTarget } from './map/MapView';
 import { HOME_PLACE, type Place } from './map/places';
 import type { BasemapStyle, CameraMode, RuntimeStatus } from './map/types';
 import { mapLayers } from './layers/registry';
+import { FREEFLY_SPEED } from './map/freeFly';
 import { Toolbar } from './ui/Toolbar';
 import { LayerPanel } from './ui/LayerPanel';
 
@@ -14,6 +15,7 @@ export default function App() {
   const [visibility, setVisibility] = useState(defaultVisibility);
   const [basemap, setBasemap] = useState<BasemapStyle>('blueprint');
   const [cameraMode, setCameraMode] = useState<CameraMode>('orbit');
+  const [cameraSpeed, setCameraSpeed] = useState<number>(FREEFLY_SPEED.default);
   const [exaggeration, setExaggeration] = useState(1);
   const [flyTo, setFlyTo] = useState<FlyTarget>({ place: HOME_PLACE, nonce: 0 });
   const [status, setStatus] = useState<RuntimeStatus>({ imagery: 'loading', terrain: 'loading' });
@@ -36,6 +38,7 @@ export default function App() {
         basemap={basemap}
         exaggeration={exaggeration}
         cameraMode={cameraMode}
+        cameraSpeed={cameraSpeed}
         flyTo={flyTo}
         onStatus={onStatus}
       />
@@ -44,6 +47,8 @@ export default function App() {
         onBasemap={setBasemap}
         cameraMode={cameraMode}
         onCameraMode={setCameraMode}
+        cameraSpeed={cameraSpeed}
+        onCameraSpeed={setCameraSpeed}
         onGoTo={goTo}
       />
       <LayerPanel
