@@ -36,7 +36,7 @@ CesiumJS 1.146.0 is the latest npm release as of 2026-10-18. Cesium needs its st
 
 ## Repo layout
 
-Planned. Nothing is scaffolded yet.
+Phase 1 scaffold is in place: `src/` (React app), `scripts/`, and `public/` (Cesium assets, generated). `api/`, `supabase/`, and `routing/` come later.
 
 - `README.md`, `CLAUDE.md`: entry points.
 - `docs/plan.md`: requirements, decisions, phases.
@@ -45,7 +45,7 @@ Planned. Nothing is scaffolded yet.
 
 ## Phase rule
 
-Docs only until nate approves starting Phase 1. Do not scaffold app code before that. The phases are in `docs/plan.md`.
+Nate approved Phase 1 in the project thread on 2026-10-18, so app code is now in scope. Later phases still need his go-ahead. The phases are in `docs/plan.md`.
 
 ## Engineering notes
 

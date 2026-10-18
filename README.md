@@ -11,15 +11,54 @@ An open-data, non-commercial 3D map of Topanga and the Santa Monica Mountains, i
 
 ## Status
 
-Planning. No app code has been written yet. Phase 1 (data) starts once the decisions in [docs/plan.md](docs/plan.md) are confirmed.
+Phase 1 MVP (app scaffold) is running on localhost: a CesiumJS globe in React, a blueprint basemap with a satellite toggle, orbit and free-fly camera controls, fly-to buttons, a layer panel, and a toolbar. Data feeds are not wired in yet. The plan is in [docs/plan.md](docs/plan.md).
+
+## Run locally
+
+Requires Node 20.19 or newer, or Node 22.12 or newer.
+
+```sh
+npm install
+cp .env.example .env.local   # optional, see below
+npm run dev                  # opens at http://localhost:5173
+```
+
+`npm install` copies the CesiumJS runtime files into `public/cesium/`. The `dev` and `build` scripts do the same copy first.
+
+Other scripts: `npm run build` (typecheck and production build into `dist/`), `npm run typecheck`, `npm run preview`.
+
+### Environment variables
+
+| Variable | Needed? | What it does |
+|----------|---------|--------------|
+| `VITE_CESIUM_ION_TOKEN` | Optional | Cesium ion access token (Community tier, free for personal and non-commercial use). Turns on Cesium World Terrain. Without it, the terrain is flat. Create one at https://ion.cesium.com/tokens |
+| `VITE_IMAGERY_URL` | Optional | Override the imagery service. Must be an ArcGIS MapServer tile endpoint. Default: USGS imagery. |
+
+Never commit real tokens. `.env*` files are gitignored, except `.env.example`.
+
+### Basemaps and terrain
+
+- **Imagery:** the default is the USGS imagery service (`USGSImageryOnly`). It needs no token. It is not yet checked from the build environment, so if it does not load, the status panel says so and the globe still renders.
+- **Blueprint** (default): dimmed, desaturated imagery over a dark navy globe, with a cyan grid and place names. **Satellite:** the imagery as-is.
+- **Terrain:** Cesium World Terrain with an ion token, otherwise a flat ellipsoid. The plan's USGS 3DEP terrain comes later, in the data phase.
+
+## Code layout
+
+- `src/map/`: the CesiumJS viewer (`MapView.tsx`), free-fly controls, and saved places.
+- `src/layers/`: map layers. Each layer is a `MapLayer` with a `mount(viewer)` that adds Cesium primitives. Add new layers to `src/layers/registry.ts`.
+- `src/ui/`: toolbar, layer panel, and small design-system pieces (`primitives.tsx`).
+- `src/styles/index.css`: Tailwind v4 theme tokens (navy, cyan grid, mono font).
+- `scripts/copy-cesium.mjs`: copies Cesium's Workers, Assets, Widgets, and ThirdParty files into `public/cesium/`.
+
+Place coordinates in `src/map/places.ts` are approximate and not yet checked against a survey map.
 
 ## Stack
 
 - React, Vite, TypeScript, Tailwind CSS
 - CesiumJS for the 3D globe
-- Vercel for hosting and server functions
-- Supabase (Postgres) for cached feeds and saved routes
-- Valhalla on a small VM for routing
+- Vercel for hosting and server functions (planned)
+- Supabase (Postgres) for cached feeds and saved routes (planned)
+- Valhalla on a small VM for routing (planned)
 - Electron later, for the desktop build
 
 ## Docs

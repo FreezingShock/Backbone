@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+/* Blueprint design tokens. Use them as Tailwind classes, e.g. bg-navy-900, text-cyan-grid. */
+@theme {
+  --color-navy-950: #050d18;
+  --color-navy-900: #0b1a2e;
+  --color-navy-800: #12263f;
+  --color-navy-700: #1c3553;
+  --color-cyan-grid: #22d3ee;
+  --color-ink: #d6ecf7;
+  --color-ink-muted: #7f9db8;
+  --color-line: rgb(34 211 238 / 0.28);
+  --color-warn: #f5b841;
+  --color-alert: #f06a6a;
+
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background-color: var(--color-navy-950);
+  color: var(--color-ink);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
