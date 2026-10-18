@@ -2,11 +2,13 @@ import { useCallback, useMemo, useState } from 'react';
 import type * as Cesium from 'cesium';
 import { MapView, type FlyTarget } from './map/MapView';
 import { HOME_PLACE, type Place } from './map/places';
+import { pinPlace } from './map/placeSelection';
 import { mapLook } from './map/look';
 import type { CameraMode, MapStyle, RuntimeStatus } from './map/types';
 import { mapLayers } from './layers/registry';
 import { useTheme } from './theme/useTheme';
 import { Compass } from './ui/Compass';
+import { PlaceCard } from './ui/PlaceCard';
 import { LayerPanel } from './ui/LayerPanel';
 import { StylePanel } from './ui/StylePanel';
 import { TitleCartouche } from './ui/TitleCartouche';
@@ -33,6 +35,11 @@ export default function App() {
   );
 
   const goTo = (place: Place) => setFlyTo((prev) => ({ place, nonce: prev.nonce + 1 }));
+  // A search result flies to the place and pins its card, so the blurb is on screen when the camera arrives.
+  const pick = (place: Place) => {
+    pinPlace(place);
+    goTo(place);
+  };
 
   const setLayerVisible = (id: string, visible: boolean) =>
     setVisibility((prev) => ({ ...prev, [id]: visible }));
@@ -49,7 +56,8 @@ export default function App() {
         onStatus={onStatus}
         onViewer={setViewer}
       />
-      <Toolbar cameraMode={cameraMode} onCameraMode={setCameraMode} onGoTo={goTo} />
+      <Toolbar cameraMode={cameraMode} onCameraMode={setCameraMode} onGoTo={goTo} onPick={pick} />
+      <PlaceCard onFlyTo={goTo} />
 
       <aside className="absolute top-4 right-4 bottom-36 flex w-64 flex-col gap-3">
         <StylePanel

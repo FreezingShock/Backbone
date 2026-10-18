@@ -60,7 +60,7 @@ Never commit real tokens. `.env*` files are gitignored, except `.env.example`.
 - `src/styles/index.css`: Tailwind v4 theme tokens (navy, cyan grid, mono font).
 - `scripts/copy-cesium.mjs`: copies Cesium's Workers, Assets, Widgets, and ThirdParty files into `public/cesium/`.
 
-Place coordinates in `src/map/places.ts` are approximate and not yet checked against a survey map.
+Place names, types, and blurbs live in `src/data/places.json`. Each coordinate comes from Wikidata or OpenStreetMap. Where both have a point, `source` gives the distance between them. `src/map/places.ts` loads the data and holds the search. To add a place, add a row to the JSON and run `npx -y tsx --test src/map/places.test.ts`.
 
 ## Stack
 
