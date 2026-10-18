@@ -61,6 +61,27 @@ export function LayerPanel({
                   </label>
                 );
               })}
+            {layers
+              .filter((layer) => layer.group === group && layer.legend && (visibility[layer.id] ?? layer.defaultVisible))
+              .map((layer) => (
+                <div key={`${layer.id}-legend`} className="mb-1 flex flex-col gap-1 px-1 font-mono text-[10px] text-ink-muted">
+                  {layer.legend?.map((item) => (
+                    <div key={item.label} className="flex items-center gap-2">
+                      <span
+                        aria-hidden
+                        className="inline-block w-6 shrink-0 rounded-full"
+                        style={{
+                          backgroundColor: item.color,
+                          height: item.thickness,
+                          opacity: item.opacity ?? 1,
+                        }}
+                      />
+                      <span>{item.label}</span>
+                    </div>
+                  ))}
+                  {layer.note && <p className="pt-0.5 text-[9px] leading-snug opacity-80">{layer.note}</p>}
+                </div>
+              ))}
           </fieldset>
         ))}
 
