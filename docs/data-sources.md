@@ -19,17 +19,21 @@ Last checked: 2026-10-18. Only open data is used by default. Rows marked "not te
 | Place names and points of interest | Wikidata (CC0) and OpenStreetMap (ODbL). Each coordinate comes from one of them. Where both have a point, the distance between them is recorded. | Wikidata entity IDs and OSM node or area tags, recorded per place in `src/data/places.json`. Built once; not fetched by the app. | Static | Checked 2026-10-18 for 50 places (Wikidata API and Nominatim). Blurbs are written for this app. |
 | 3D Google tiles (optional) | Map Tiles API, Photorealistic 3D Tiles | Google Cloud key with billing enabled | Continuous | Pricing page read 2026-10-16 |
 
-## Road tiers
+## Road hierarchy
 
-`scripts/build-roads.mjs` sets a `tier` on each road from its OSM tags, or from the TIGER feature class (MTFCC) mapped to the same tags. The app only reads the tier.
+`scripts/road-classes.mjs` sets a `class` on each road, from its name, route ref, and OSM highway tag (or the TIGER feature class mapped to the same tags). Canyon crossings also get a `crossing` short name. The build script calls it, and `node scripts/build-roads.mjs --reclassify` re-applies it to the committed file without the source data. The app reads `class` and `crossing` only. The crossing list is hand-written, so add to it there.
 
-| Tier | Drawn as | Roads |
-|------|----------|-------|
-| 1 | Thick, near-white | Topanga Canyon Blvd, Kanan Dume Rd, Malibu Canyon Rd, Pacific Coast Hwy, Mulholland Hwy, Ventura Fwy, CA 1, CA 27, US 101, and OSM motorway, trunk, or primary |
-| 2 | Medium, amber | OSM secondary and tertiary (arterials and collectors) |
-| 3 | Thin, dim cyan | Everything else: local streets, tracks, paths, footways |
+| Class | Drawn as | Roads |
+|-------|----------|-------|
+| highway | Muted grey. "Avoid" for canyon routes. Its layer dims when unchecked. | US 101, Ventura and Moorpark freeways, Pacific Coast Hwy, their ramps |
+| crossing | Thick, highlighted (blue on paper, emerald on navy). Labeled. | Canyon roads over the mountains: Malibu Canyon, Kanan Dume, Topanga Canyon (incl. SR 27), Old Topanga, Las Virgenes, Decker, Encinal Canyon, Westlake Blvd, Potrero, Lynn, Wendy, Mulholland Hwy and Dr, Latigo Canyon, Yerba Buena, Reyes Adobe, Kanan, Lindero Canyon, Triunfo Canyon, Liberty Canyon, Corral Canyon, Little Sycamore, Lobo Canyon, Palo Comado |
+| arterial | Medium, red on paper and amber on navy | TIGER state routes and major county roads, plus named valley boulevards such as Thousand Oaks Blvd and Ventura Blvd |
+| collector | Thin | Other named through roads (Rd, Blvd, Ave, Pkwy) |
+| local | Thinnest, dim | Streets (Dr, Ln, Ct, Cir, Pl, Way), service roads, fire roads, tracks, paths |
 
-Road names are labeled on tiers 1 and 2 only. Labels are spaced apart and shown when the camera is close enough.
+Crossing and arterial names are labeled. Labels are spaced apart and shown when the camera is close enough.
+
+The demo route (Layers > Canyon-only demo route) plans Newbury Park, Westlake Village, Thousand Oaks, and Calabasas over crossings only, with no highway class edges. It is computed in the browser from the road graph (`src/lib/roads/route.ts`, tested in `src/lib/roads/route.test.ts`). Its stop coordinates are approximate town centers, not surveyed points.
 
 ## Feed polling
 
