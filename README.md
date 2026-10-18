@@ -27,6 +27,16 @@ npm run dev                  # opens at http://localhost:5173
 
 Other scripts: `npm run build` (typecheck and production build into `dist/`), `npm run typecheck`, `npm run preview`.
 
+### Auto-update while developing
+
+`npm run dev:sync` starts the dev server and checks `origin/main` every 30 seconds. Pull requests land on `main` when merged, so the checkout updates after each merge:
+
+- If this checkout is on `main` with no uncommitted changes, it fast-forwards to the new commits, and Vite hot-reloads them.
+- It runs `npm install` only when `package.json` or `package-lock.json` changed.
+- If you are on another branch or have uncommitted changes, it logs that an update is waiting and leaves your work alone.
+
+Set `DEV_SYNC_INTERVAL_SECONDS` to change the interval (minimum 5). Press Ctrl+C to stop both the sync and the dev server.
+
 ### Environment variables
 
 | Variable | Needed? | What it does |
