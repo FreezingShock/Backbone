@@ -14,8 +14,22 @@ Last checked: 2026-10-18. Only open data is used by default. Rows marked "not te
 | County road closures, such as Encinal Canyon Road | LA County Public Works notices | No feed found | Unknown | Gap |
 | Elevation | USGS 3DEP 1 m DEM | National Map elevation services | Static | Not tested live |
 | Aerial photos | USDA NAIP through USGS | ImageServer or bulk download | Static, updated every few years | Not tested live |
-| Roads, trails, labels | OpenStreetMap, Geofabrik California extract | PBF download, and Overpass API for quick queries | Daily extracts | Not tested live |
+| Roads, trails, labels | OpenStreetMap highway ways via Overpass API (`https://overpass-api.de/api/interpreter`), built by `scripts/build-roads.mjs` into `public/data/roads.geojson` | Overpass POST, bounded to the Santa Monica Mountains box. Also the Geofabrik California extract for later. | Refresh by hand, then commit the output | Not verified live. Overpass returned HTTP 403 and Geofabrik did not connect from the build sandbox on 2026-10-18. |
 | 3D Google tiles (optional) | Map Tiles API, Photorealistic 3D Tiles | Google Cloud key with billing enabled | Continuous | Pricing page read 2026-10-16 |
+
+## Road tiers
+
+`scripts/build-roads.mjs` sets a `tier` on each road from its OSM tags. The app only reads the tier.
+
+| Tier | Drawn as | Roads |
+|------|----------|-------|
+| 1 | Thick, near-white | Topanga Canyon Blvd, Kanan Dume Rd, Malibu Canyon Rd, Pacific Coast Hwy, Mulholland Hwy, Ventura Fwy, CA 1, CA 27, US 101, and OSM motorway, trunk, or primary |
+| 2 | Medium, amber | OSM secondary and tertiary (arterials and collectors) |
+| 3 | Thin, dim cyan | Everything else: local streets, tracks, paths, footways |
+
+Road names are labeled on tiers 1 and 2 only. Labels are spaced apart and shown when the camera is close enough.
+
+## Feed polling
 
 ## Feed polling
 
