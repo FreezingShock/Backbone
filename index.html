@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Backbone</title>
+    <script>
+      // Must run before the Cesium bundle loads. Static assets are copied to /cesium/ by vite.config.ts.
+      window.CESIUM_BASE_URL = '/cesium/';
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
