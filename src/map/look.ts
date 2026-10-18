@@ -33,11 +33,15 @@ export interface MapLook {
   grid: string;
   /** Relief only: shaded terrain drawn as an imagery layer. See src/map/hillshade.ts. */
   hillshade?: HillshadePalette;
+  /** Road colors by hierarchy class (see scripts/road-classes.mjs), plus the demo route and label inks. */
   roads: {
-    artery: RoadTierLook;
+    highway: RoadTierLook;
+    crossing: RoadTierLook;
     arterial: RoadTierLook;
+    collector: RoadTierLook;
     local: RoadTierLook;
-    arteryLabel: string;
+    route: RoadTierLook;
+    crossingLabel: string;
     arterialLabel: string;
   };
 }
@@ -54,10 +58,13 @@ const PAPER: MapLook = {
   placeInk: '#2a2620',
   grid: 'rgb(42 38 32 / 0.2)',
   roads: {
-    artery: { color: '#2a2620', alpha: 0.92 },
+    highway: { color: '#8c8273', alpha: 0.6 },
+    crossing: { color: '#1e5fa8', alpha: 0.95 },
     arterial: { color: '#b8432a', alpha: 0.85 },
-    local: { color: '#6b6254', alpha: 0.5 },
-    arteryLabel: '#2a2620',
+    collector: { color: '#6b6254', alpha: 0.7 },
+    local: { color: '#6b6254', alpha: 0.45 },
+    route: { color: '#7e22ce', alpha: 0.9 },
+    crossingLabel: '#1e4f8a',
     arterialLabel: '#a0391f',
   },
 };
@@ -74,10 +81,13 @@ const NAVY: MapLook = {
   placeInk: '#d6ecf7',
   grid: 'rgb(34 211 238 / 0.32)',
   roads: {
-    artery: { color: '#f0fdff', alpha: 0.95 },
+    highway: { color: '#64748b', alpha: 0.7 },
+    crossing: { color: '#34d399', alpha: 0.95 },
     arterial: { color: '#fbbf24', alpha: 0.8 },
-    local: { color: '#38bdf8', alpha: 0.35 },
-    arteryLabel: '#f0fdff',
+    collector: { color: '#38bdf8', alpha: 0.6 },
+    local: { color: '#38bdf8', alpha: 0.3 },
+    route: { color: '#f472b6', alpha: 0.95 },
+    crossingLabel: '#a7f3d0',
     arterialLabel: '#fde68a',
   },
 };
