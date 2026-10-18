@@ -1,6 +1,6 @@
 # Backbone: plan
 
-Last updated: 2026-10-18. Status: planning. Nothing is built yet.
+Last updated: 2026-10-18. Status: Phase 1 MVP scaffold runs on localhost (3D globe, basemaps, camera controls, layer panel). Data feeds are not wired yet.
 
 Summary: build a CesiumJS web app first. A small backend polls the fire and closure feeds every 5 minutes, and Electron wraps the same app later. The free route works now: NASA, NIFC, and USGS data are public, and the Cesium ion Community tier covers personal and non-commercial use.
 
