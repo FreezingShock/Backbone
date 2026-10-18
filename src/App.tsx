@@ -6,6 +6,7 @@ import { pinPlace } from './map/placeSelection';
 import { mapLook } from './map/look';
 import type { CameraMode, MapStyle, RuntimeStatus } from './map/types';
 import { mapLayers } from './layers/registry';
+import { FREEFLY_SPEED } from './map/freeFly';
 import { useTheme } from './theme/useTheme';
 import { Compass } from './ui/Compass';
 import { PlaceCard } from './ui/PlaceCard';
@@ -23,6 +24,7 @@ export default function App() {
   const [visibility, setVisibility] = useState(defaultVisibility);
   const [mapStyle, setMapStyle] = useState<MapStyle>('blueprint');
   const [cameraMode, setCameraMode] = useState<CameraMode>('orbit');
+  const [cameraSpeed, setCameraSpeed] = useState<number>(FREEFLY_SPEED.default);
   const [exaggeration, setExaggeration] = useState(1);
   const [flyTo, setFlyTo] = useState<FlyTarget>({ place: HOME_PLACE, nonce: 0 });
   const [status, setStatus] = useState<RuntimeStatus>({ imagery: 'loading', terrain: 'loading' });
@@ -52,11 +54,19 @@ export default function App() {
         look={look}
         exaggeration={exaggeration}
         cameraMode={cameraMode}
+        cameraSpeed={cameraSpeed}
         flyTo={flyTo}
         onStatus={onStatus}
         onViewer={setViewer}
       />
-      <Toolbar cameraMode={cameraMode} onCameraMode={setCameraMode} onGoTo={goTo} onPick={pick} />
+      <Toolbar
+        cameraMode={cameraMode}
+        onCameraMode={setCameraMode}
+        cameraSpeed={cameraSpeed}
+        onCameraSpeed={setCameraSpeed}
+        onGoTo={goTo}
+        onPick={pick}
+      />
       <PlaceCard onFlyTo={goTo} />
 
       <aside className="absolute top-4 right-4 bottom-36 flex w-64 flex-col gap-3">

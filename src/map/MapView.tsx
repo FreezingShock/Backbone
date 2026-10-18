@@ -7,6 +7,7 @@ import { createHillshade } from './hillshade';
 import { attachFreeFly } from './freeFly';
 import { createOpenTerrain } from './openTerrain';
 import type { Place } from './places';
+import { attachRenderQuality } from './renderQuality';
 import type { CameraMode, RuntimeStatus } from './types';
 
 export interface FlyTarget {
@@ -22,6 +23,8 @@ export interface MapViewProps {
   look: MapLook;
   exaggeration: number;
   cameraMode: CameraMode;
+  /** Free-fly speed multiplier from the UI. Read every frame, so changing it does not restart free-fly. */
+  cameraSpeed: number;
   flyTo: FlyTarget;
   onStatus: (status: Partial<RuntimeStatus>) => void;
   /** Receives the Cesium viewer once it exists, and null when it is torn down. */
@@ -36,6 +39,7 @@ export function MapView({
   look,
   exaggeration,
   cameraMode,
+  cameraSpeed,
   flyTo,
   onStatus,
   onViewer,
@@ -48,10 +52,15 @@ export function MapView({
   const handlesRef = useRef(new Map<string, LayerHandle>());
   const lookRef = useRef(look);
   const statusRef = useRef(onStatus);
+  const speedRef = useRef(cameraSpeed);
 
   useEffect(() => {
     statusRef.current = onStatus;
   });
+
+  useEffect(() => {
+    speedRef.current = cameraSpeed;
+  }, [cameraSpeed]);
 
   // Create the viewer once. Basemap and terrain are added after it exists.
   useEffect(() => {
@@ -79,6 +88,8 @@ export function MapView({
     scene.globe.depthTestAgainstTerrain = true;
     if (scene.skyAtmosphere) scene.skyAtmosphere.show = false;
     scene.globe.showGroundAtmosphere = false;
+    // Draw only when something changes. attachRenderQuality adds a heartbeat so nothing stalls.
+    scene.requestRenderMode = true;
 
     setViewer(created);
 
@@ -156,6 +167,7 @@ export function MapView({
     scene.globe.baseColor = Cesium.Color.fromCssColorString(look.globe);
     scene.globe.enableLighting = look.lighting; // Shading from the terrain gives the hillshade look.
     for (const handle of handlesRef.current.values()) handle.restyle(look);
+    scene.requestRender();
   }, [viewer, look]);
 
   useEffect(() => {
@@ -166,10 +178,13 @@ export function MapView({
     imagery.brightness = brightness;
     imagery.contrast = contrast;
     imagery.alpha = alpha;
-  }, [imagery, look]);
+    viewer?.scene.requestRender();
+  }, [imagery, look, viewer]);
 
   useEffect(() => {
-    if (viewer) viewer.scene.verticalExaggeration = exaggeration;
+    if (!viewer) return;
+    viewer.scene.verticalExaggeration = exaggeration;
+    viewer.scene.requestRender();
   }, [viewer, exaggeration]);
 
   // Relief: hillshade drawn as an imagery layer on top of the (hidden) photo.
@@ -206,14 +221,21 @@ export function MapView({
   }, [viewer, layers]);
 
   useEffect(() => {
+    if (!viewer) return;
     for (const layer of layers) {
       handlesRef.current.get(layer.id)?.show(visibility[layer.id] ?? layer.defaultVisible);
     }
-  }, [layers, visibility, mountedVersion]);
+    viewer.scene.requestRender();
+  }, [viewer, layers, visibility, mountedVersion]);
+
+  useEffect(() => {
+    if (!viewer) return;
+    return attachRenderQuality(viewer);
+  }, [viewer]);
 
   useEffect(() => {
     if (!viewer || cameraMode !== 'freefly') return;
-    return attachFreeFly(viewer);
+    return attachFreeFly(viewer, () => speedRef.current);
   }, [viewer, cameraMode]);
 
   useEffect(() => {
@@ -227,6 +249,7 @@ export function MapView({
         duration: 2.5,
       },
     );
+    viewer.scene.requestRender();
   }, [viewer, flyTo]);
 
   return <div ref={containerRef} className="absolute inset-0" />;
