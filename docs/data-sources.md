@@ -14,12 +14,13 @@ Last checked: 2026-10-18. Only open data is used by default. Rows marked "not te
 | County road closures, such as Encinal Canyon Road | LA County Public Works notices | No feed found | Unknown | Gap |
 | Elevation | USGS 3DEP 1 m DEM | National Map elevation services | Static | Not tested live |
 | Aerial photos | USDA NAIP through USGS | ImageServer or bulk download | Static, updated every few years | Not tested live |
-| Roads, trails, labels | OpenStreetMap highway ways via Overpass API (`https://overpass-api.de/api/interpreter`), built by `scripts/build-roads.mjs` into `public/data/roads.geojson` | Overpass POST, bounded to the Santa Monica Mountains box. Also the Geofabrik California extract for later. | Refresh by hand, then commit the output | Not verified live. Overpass returned HTTP 403 and Geofabrik did not connect from the build sandbox on 2026-10-18. |
+| Roads, labels | Census TIGER/Line 2024 roads for LA County (06037) and Ventura County (06111), built by `node scripts/build-roads.mjs --tiger <dir>` into `public/data/roads.geojson` | Shapefile zips from `https://www2.census.gov/geo/tiger/TIGER2024/ROADS/`, clipped to the Santa Monica Mountains box. Public domain. | Refresh by hand, then commit the output | Built 2026-10-18 from the zips. Overpass was unusable from the build sandbox that day (resets, HTTP 500, and one mirror returned empty data), so `scripts/build-roads.mjs` without `--tiger` is untested live. |
+| Trails | Not yet sourced. TIGER has no hiking trails. OSM trails need Overpass or a Geofabrik extract. | Gap | Unknown | Gap |
 | 3D Google tiles (optional) | Map Tiles API, Photorealistic 3D Tiles | Google Cloud key with billing enabled | Continuous | Pricing page read 2026-10-16 |
 
 ## Road tiers
 
-`scripts/build-roads.mjs` sets a `tier` on each road from its OSM tags. The app only reads the tier.
+`scripts/build-roads.mjs` sets a `tier` on each road from its OSM tags, or from the TIGER feature class (MTFCC) mapped to the same tags. The app only reads the tier.
 
 | Tier | Drawn as | Roads |
 |------|----------|-------|

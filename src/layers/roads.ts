@@ -1,7 +1,7 @@
 import * as Cesium from 'cesium';
 import type { LayerHandle, MapLayer } from './types';
 
-// Built by scripts/build-roads.mjs from OpenStreetMap. Served from public/.
+// Built by scripts/build-roads.mjs from Census TIGER/Line (or OpenStreetMap, via Overpass). Served from public/.
 const DATA_URL = '/data/roads.geojson';
 
 // Tier styles. Widths are screen pixels. Tier 1 is drawn last so arteries sit on top.
@@ -99,7 +99,7 @@ export const roadsLayer: MapLayer = {
     { label: 'Arterials and collectors', color: TIERS[2].color, thickness: 2, opacity: 0.9 },
     { label: 'Local roads and trails', color: TIERS[3].color, thickness: 1, opacity: 0.5 },
   ],
-  note: 'Data © OpenStreetMap contributors (ODbL).',
+  note: 'Roads: U.S. Census TIGER/Line 2024 (public domain). Trails are not in this source.',
   mount(viewer): LayerHandle {
     const primitives: Cesium.GroundPolylinePrimitive[] = [];
     const labels = new Cesium.LabelCollection({ scene: viewer.scene });
