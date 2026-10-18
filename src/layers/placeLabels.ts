@@ -2,20 +2,23 @@ import * as Cesium from 'cesium';
 import { PLACES } from '../map/places';
 import type { LayerHandle, MapLayer } from './types';
 
+// Place names use the serif face, the cartographic title type.
+const PLACE_FONT = '17px "IM Fell English", Georgia, serif';
+
 export const placeLabelsLayer: MapLayer = {
   id: 'place-labels',
   label: 'Place names',
   group: 'Base',
   defaultVisible: true,
-  mount(viewer): LayerHandle {
+  mount(viewer, look): LayerHandle {
     const labels = new Cesium.LabelCollection({ scene: viewer.scene });
     for (const place of PLACES) {
       labels.add({
         position: Cesium.Cartesian3.fromDegrees(place.lon, place.lat),
-        text: place.name.toUpperCase(),
-        font: '13px ui-monospace, Menlo, Consolas, monospace',
-        fillColor: Cesium.Color.fromCssColorString('#d6ecf7'),
-        outlineColor: Cesium.Color.fromCssColorString('#050d18'),
+        text: place.name,
+        font: PLACE_FONT,
+        fillColor: Cesium.Color.fromCssColorString(look.placeInk),
+        outlineColor: Cesium.Color.fromCssColorString(look.halo),
         outlineWidth: 3,
         style: Cesium.LabelStyle.FILL_AND_OUTLINE,
         verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
@@ -28,6 +31,13 @@ export const placeLabelsLayer: MapLayer = {
     return {
       show(visible) {
         labels.show = visible;
+      },
+      restyle(next) {
+        for (let i = 0; i < labels.length; i++) {
+          const label = labels.get(i);
+          label.fillColor = Cesium.Color.fromCssColorString(next.placeInk);
+          label.outlineColor = Cesium.Color.fromCssColorString(next.halo);
+        }
       },
       destroy() {
         if (!viewer.isDestroyed()) viewer.scene.primitives.remove(labels);

@@ -1,6 +1,6 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 
-/** Floating blueprint panel: navy surface, thin cyan rule, mono heading. */
+/** Floating plate: the one panel surface. The title is a serif caption with a rule under it. */
 export function Panel({
   title,
   children,
@@ -13,11 +13,9 @@ export function Panel({
   bodyClassName?: string;
 }) {
   return (
-    <section
-      className={`rounded-md border border-line bg-navy-900/85 shadow-lg shadow-black/40 backdrop-blur ${className}`}
-    >
+    <section className={`plate ${className}`}>
       {title && (
-        <h2 className="border-b border-line px-3 py-2 font-mono text-[11px] tracking-[0.2em] text-cyan-grid uppercase">
+        <h2 className="border-b border-rule px-3 py-2 font-serif text-[13px] tracking-[0.2em] text-accent uppercase">
           {title}
         </h2>
       )}
@@ -26,20 +24,28 @@ export function Panel({
   );
 }
 
-/** Small toolbar or segmented button. `active` shows the selected state. */
+/**
+ * Toolbar or segmented button. `mono` is for controls; `serif` is for place names.
+ * `active` shows the selected state.
+ */
 export function Chip({
   active = false,
+  variant = 'mono',
   className = '',
   ...rest
-}: ButtonHTMLAttributes<HTMLButtonElement> & { active?: boolean }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & { active?: boolean; variant?: 'mono' | 'serif' }) {
+  const face =
+    variant === 'serif'
+      ? 'font-serif text-[14px] tracking-wide'
+      : 'font-mono text-[11px] tracking-wider uppercase';
   return (
     <button
       type="button"
       aria-pressed={active}
-      className={`cursor-pointer rounded-sm border px-2.5 py-1 font-mono text-[11px] tracking-wider uppercase transition-colors focus-visible:outline-2 focus-visible:outline-cyan-grid ${
+      className={`cursor-pointer rounded-[2px] border px-2.5 py-1 transition-colors ${face} ${
         active
-          ? 'border-cyan-grid bg-cyan-grid/15 text-cyan-grid'
-          : 'border-line bg-navy-800/80 text-ink-muted hover:border-cyan-grid/60 hover:text-ink'
+          ? 'border-accent bg-accent-soft text-accent'
+          : 'border-rule bg-transparent text-ink-2 hover:border-accent hover:text-ink'
       } ${className}`}
       {...rest}
     />
