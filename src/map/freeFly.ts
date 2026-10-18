@@ -4,13 +4,13 @@ import * as Cesium from 'cesium';
 export const FREEFLY = {
   /**
    * Base speed per meter of height above ground, so low flight is slow and high flight is fast.
-   * At 1 km up this is 300 m/s, the old fixed speed.
+   * At 1 km up this is 600 m/s, twice the previous tuning.
    */
-  speedPerMeterAboveGround: 0.3,
-  minSpeed: 150,
-  maxSpeed: 6000,
+  speedPerMeterAboveGround: 0.6,
+  minSpeed: 250,
+  maxSpeed: 12000,
   /** Speed multiplier while Shift is held. */
-  boost: 3,
+  boost: 4,
   /** Seconds to reach about 63% of target speed after a key is pressed. */
   accelerationTime: 0.25,
   /** Seconds to lose about 63% of speed after keys are released. Gives a short glide. */
@@ -41,6 +41,15 @@ function isTextEntry(target: EventTarget | null): boolean {
 function approach(value: number, target: number, timeConstant: number, dt: number): number {
   const next = value + (target - value) * (1 - Math.exp(-dt / timeConstant));
   return Math.abs(next - target) < SNAP_EPSILON ? target : next;
+}
+
+/**
+ * Free-fly top speed in meters per second, before the UI multiplier. Scales with height above ground and is
+ * clamped, then boost multiplies the clamped value.
+ */
+export function freeFlySpeed(altitude: number, boosted: boolean): number {
+  const base = Cesium.Math.clamp(altitude * FREEFLY.speedPerMeterAboveGround, FREEFLY.minSpeed, FREEFLY.maxSpeed);
+  return boosted ? base * FREEFLY.boost : base;
 }
 
 // Reused every frame so the frame loop does not allocate.
@@ -118,11 +127,8 @@ export function attachFreeFly(viewer: Cesium.Viewer, getSpeedScale: () => number
     }
 
     const altitude = Math.max(camera.positionCartographic.height - groundHeight, 0);
-    const boost = keys.has('ShiftLeft') || keys.has('ShiftRight') ? FREEFLY.boost : 1;
-    const speed =
-      Cesium.Math.clamp(altitude * FREEFLY.speedPerMeterAboveGround, FREEFLY.minSpeed, FREEFLY.maxSpeed) *
-      getSpeedScale() *
-      boost;
+    const boosted = keys.has('ShiftLeft') || keys.has('ShiftRight');
+    const speed = freeFlySpeed(altitude, boosted) * getSpeedScale();
 
     const forward = (keys.has('KeyW') ? 1 : 0) - (keys.has('KeyS') ? 1 : 0);
     const right = (keys.has('KeyD') ? 1 : 0) - (keys.has('KeyA') ? 1 : 0);

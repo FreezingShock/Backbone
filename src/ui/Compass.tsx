@@ -7,9 +7,22 @@ export function Compass({ viewer }: { viewer: Cesium.Viewer | null }) {
 
   useEffect(() => {
     if (!viewer) return;
-    const update = () => setHeading(Cesium.Math.toDegrees(viewer.camera.heading));
-    update();
-    return viewer.camera.changed.addEventListener(update);
+    let frame = 0;
+    // The camera fires `changed` many times a frame while it moves. Batch to one update per frame, and round so
+    // tiny drift does not re-render the rose.
+    const sync = () => {
+      frame = 0;
+      setHeading(Math.round(Cesium.Math.toDegrees(viewer.camera.heading) * 2) / 2);
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(sync);
+    };
+    sync();
+    const removeListener = viewer.camera.changed.addEventListener(schedule);
+    return () => {
+      removeListener();
+      cancelAnimationFrame(frame);
+    };
   }, [viewer]);
 
   const faceNorth = () => {
