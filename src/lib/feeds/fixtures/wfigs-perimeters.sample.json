@@ -1,0 +1,55 @@
+{
+  "_note": "SAMPLE, not live data. Hand-drawn approximate polygons in ArcGIS-style GeoJSON. The Bryson shape is a rough blob near Encinal Canyon. The second fire is outside the Santa Monica Mountains box and exists to test filtering.",
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": 1,
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-118.8650, 34.0700],
+          [-118.8625, 34.0728],
+          [-118.8580, 34.0735],
+          [-118.8548, 34.0712],
+          [-118.8538, 34.0675],
+          [-118.8560, 34.0648],
+          [-118.8601, 34.0642],
+          [-118.8640, 34.0658],
+          [-118.8660, 34.0680],
+          [-118.8650, 34.0700]
+        ]]
+      },
+      "properties": {
+        "poly_IncidentName": "BRYSON",
+        "attr_IncidentName": "BRYSON",
+        "attr_UniqueFireIdentifier": "2026-CAVNC-SAMPLE-BRYSON",
+        "poly_GISAcres": 147,
+        "attr_PercentContained": null,
+        "attr_FireDiscoveryDateTime": 1792005600000,
+        "poly_DateCurrent": 1792203360000,
+        "attr_POOState": "US-CA"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2,
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-120.5000, 35.5000],
+          [-120.4900, 35.5000],
+          [-120.4900, 35.5090],
+          [-120.5000, 35.5090],
+          [-120.5000, 35.5000]
+        ]]
+      },
+      "properties": {
+        "poly_IncidentName": "SAMPLE CENTRAL COAST",
+        "attr_UniqueFireIdentifier": "2026-CASLU-SAMPLE-OUTOFAREA",
+        "poly_GISAcres": 90,
+        "attr_POOState": "US-CA"
+      }
+    }
+  ]
+}

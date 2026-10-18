@@ -1,0 +1,27 @@
+{
+  "_note": "Hand-curated closures for roads with no feed. Edit this file to open or close a road. Remove an entry, or set expiresAt, when it reopens. Geometry is approximate, placed by hand, and not surveyed. Replace it with a surveyed line before any routing uses it.",
+  "closures": [
+    {
+      "id": "override-encinal-canyon-road",
+      "road": "Encinal Canyon Road",
+      "status": "closed",
+      "reason": "Bryson Fire",
+      "source": "CAL FIRE Bryson Fire incident page (as recorded in docs/plan.md)",
+      "recordedAt": "2026-10-16T21:16:00-07:00",
+      "expiresAt": null,
+      "geometryNote": "Approximate point near the road, not surveyed.",
+      "geometry": { "type": "Point", "coordinates": [-118.8600, 34.0690] }
+    },
+    {
+      "id": "override-decker-road",
+      "road": "Decker Road",
+      "status": "closed",
+      "reason": "Bryson Fire",
+      "source": "CAL FIRE Bryson Fire incident page (as recorded in docs/plan.md)",
+      "recordedAt": "2026-10-16T21:16:00-07:00",
+      "expiresAt": null,
+      "geometryNote": "Approximate point near the road, not surveyed.",
+      "geometry": { "type": "Point", "coordinates": [-118.8230, 34.0590] }
+    }
+  ]
+}
