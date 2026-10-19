@@ -23,7 +23,7 @@ interface KindStyle {
   boxHeight: number;
 }
 
-const SERIF = '"IM Fell English", Georgia, serif';
+const SERIF = '"Anthropic Serif", "IM Fell English", Georgia, serif';
 
 const STYLE: Record<PlaceKind, KindStyle> = {
   city: { font: `22px ${SERIF}`, upper: true, maxDistance: 400_000, priority: 0, boxHeight: 26 },

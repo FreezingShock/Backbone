@@ -64,16 +64,16 @@ export function Compass({ viewer }: { viewer: Cesium.Viewer | null }) {
           <polygon points="-30,0 0,-5 0,5" fill="var(--c-ink-3)" opacity="0.6" />
           <polygon points="30,0 0,-5 0,5" fill="var(--c-ink-3)" opacity="0.6" />
           <circle r="2" fill="var(--c-ink)" />
-          <text y="-24" textAnchor="middle" fontFamily="IM Fell English, Georgia, serif" fontSize="10" fill="var(--c-accent)" dy="-14">
+          <text y="-24" textAnchor="middle" fontFamily="Anthropic Serif, IM Fell English, Georgia, serif" fontSize="10" fill="var(--c-accent)" dy="-14">
             N
           </text>
-          <text y="20" textAnchor="middle" fontFamily="IM Fell English, Georgia, serif" fontSize="8" fill="var(--c-ink-3)" dy="14">
+          <text y="20" textAnchor="middle" fontFamily="Anthropic Serif, IM Fell English, Georgia, serif" fontSize="8" fill="var(--c-ink-3)" dy="14">
             S
           </text>
-          <text x="-20" textAnchor="middle" fontFamily="IM Fell English, Georgia, serif" fontSize="8" fill="var(--c-ink-3)" dy="3">
+          <text x="-20" textAnchor="middle" fontFamily="Anthropic Serif, IM Fell English, Georgia, serif" fontSize="8" fill="var(--c-ink-3)" dy="3">
             W
           </text>
-          <text x="20" textAnchor="middle" fontFamily="IM Fell English, Georgia, serif" fontSize="8" fill="var(--c-ink-3)" dy="3">
+          <text x="20" textAnchor="middle" fontFamily="Anthropic Serif, IM Fell English, Georgia, serif" fontSize="8" fill="var(--c-ink-3)" dy="3">
             E
           </text>
         </g>
