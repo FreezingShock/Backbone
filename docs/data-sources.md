@@ -37,14 +37,15 @@ The demo route (Layers > Canyon-only demo route) plans Newbury Park, Westlake Vi
 
 ## Routing (Canyon Cutting)
 
-Checked 2026-10-19. Built by `npm run routing:build` (scripts/build-routing-graph.ts) into `public/data/routing-graph.json` (about 1.6 MB, 17.8k junctions, 21.4k road pieces). The engine is in `src/routing/`. It runs in the browser and needs no server.
+Checked 2026-10-19. Built by `npm run routing:build` (scripts/build-routing-graph.ts) into `public/data/routing-graph.json` (about 1.7 MB, 17.3k junctions, 20.6k road pieces). Elevation comes from `npm run routing:elevation` (scripts/fetch-elevation.ts), which fills the cache the build reads. The engine is in `src/routing/`. It runs in the browser and needs no server.
 
 | Input | Source | Status |
 |-------|--------|--------|
 | Road lines, names, classes | `public/data/roads.geojson` (Census TIGER/Line 2024) | Used. Junctions are road endpoints, as TIGER stores them. One-way signs are not in TIGER, so every road runs both ways. |
 | Speed limits | None in the graph | Gap. Speeds are estimates by class (freeway 60, arterial and canyon crossing 40, collector 30, local 25 mph, times 0.9 cruise, capped by the curve). Replace with posted limits when a source is verified. |
 | Stop signs, traffic signals | Hand-curated list in `scripts/routing-controls.json` (empty) | Gap. The engine adds the step and a delay (6 s stop sign, 20 s signal, estimates) when an entry sits within 30 m of a junction. Routes say so in their warnings. |
-| Grade | None | Gap. No elevation is in the graph, so difficulty ignores grade. |
+| Elevation, grade, mountain score | USGS National Elevation Dataset 10 m (ned10m) through `api.opentopodata.org`. Checked 2026-10-19: returns values (311 m at 34.1, -118.6), 100 points per request, about 1 request per second, 1000 requests per day. Cached in `scripts/elevation-cache.json` by `npm run routing:elevation`, so the build never calls it. | Used. About 27k sample points every 250 m along the road lines. Feeds the mountain score (height above the valley floor, distance from the 101, curvature, steepness) and segment grade. Difficulty does not use grade yet. |
+| 101 corridor | Freeway lines named US Hwy 101, Ventura Fwy, Hollywood Fwy and US Hwy 101 Bus in `public/data/roads.geojson` | Used. Valley roads within 1.5 km of it at valley elevation are priced at 5 in canyon mode, and the freeway at 8. |
 | Overpass (OSM roads, signs, speeds) | overpass-api.de, overpass.kumi.systems, overpass.osm.ch, maps.mail.ru | Unreachable on 2026-10-19: resets, HTTP 500 and 504, or an empty count for a known bbox. Not used. |
 | Geofabrik and BBBike extracts | BBBike LosAngeles.osm.pbf (214 MB) | Reachable, but its bounding box is -118.5 to -118.0 longitude, so it misses the west valleys and the canyons. Not used. |
 | Places and city centers | `src/data/places.json` | Used. Cities, towns and neighborhoods become city stops. |
@@ -53,6 +54,7 @@ Checked 2026-10-19. Built by `npm run routing:build` (scripts/build-routing-grap
 
 Engine defaults, chosen here and stated in the code:
 - Canyon routes avoid highway-class roads (US 101, PCH, freeway ramps). A leg uses one only when nothing else connects its stops, and the route then carries a warning.
+- Canyon mode with mountainRoads on (the planner's Canyon Cutting mode): each road piece costs its drive time times a weight. Mountain roads (score near 100) cost about 0.8, valley roads cost up to 2.8, valley roads beside the 101 cost 5, and freeways 8. Alternatives are priced away from the roads of the routes before them, kept only when at least half their road is mountain and they share less than 60% of the shorter route. The top route is the most mountain-heavy one. Each route has `mountainShare` and a `summary` such as "via Topanga, then Mulholland Hwy west".
 - ETA is driving time over the graph, plus 0 to 4 s for each turn (under 45° free, under 120° 2 s, sharper 4 s), plus control delays. Turns are not part of the search, only the timing.
 - Difficulty is a 0 to 100 score per road piece: curvature (up to 50), class (up to 12), narrow road (8), unpaved (15), grade (up to 20, unused for now). Bands: easy under 15, intermediate under 30, medium under 45, hard under 60, difficult above. Colors are Minecraft chat colors: green, yellow, gold, red, dark red. A leg or route rolls up as its length-weighted mean.
 - Steps: a name change always gets a step, and a turn under 25° on a new road reads as "continue". Along one road, only turns of 45° or more get a step.

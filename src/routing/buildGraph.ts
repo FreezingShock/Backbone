@@ -3,6 +3,7 @@ import { curvatureDegPerKm, metersBetween, polylineMeters } from './geo';
 import { encodePolyline } from './polyline';
 import { classIndex } from './roadClasses';
 import { joinRoadEnds } from './join';
+import { CORRIDOR_NAME, CorridorIndex, pieceTerrain, sampleLine, scoreTerrain, type ElevationLookup } from './mountain';
 import { GRAPH_FILE_VERSION, type ControlRow, type EdgeRow, type GraphFile, type IntersectionRow, type PlaceRow } from './graphFile';
 
 /** Road features as they come from public/data/roads.geojson (Census TIGER, classed by scripts/road-classes.mjs). */
@@ -28,6 +29,11 @@ export interface BuildInput {
   controlSnapMeters?: number;
   /** Road ends this close to another road (or to each other) are joined. Default 12 m. */
   joinMeters?: number;
+  /**
+   * Elevation in meters for a point, from the sampled elevation cache (scripts/fetch-elevation.ts). Without it, grade
+   * is left out and mountain scores lean on the other signals.
+   */
+  elevationAt?: ElevationLookup;
 }
 
 export interface BuildReport {
@@ -95,6 +101,9 @@ export function buildGraphFile(input: BuildInput): { file: GraphFile; report: Bu
   roads.length = 0;
   roads.push(...usable);
 
+  // The 101 corridor: freeway lines by name. Valley roads near these are penalized in canyon routing (mountain.ts).
+  const corridor = new CorridorIndex(roads.filter((road) => road.cls === 'highway' && CORRIDOR_NAME.test(road.name)).map((road) => road.coords));
+
   const endpointKeys = new Set<string>();
   for (const road of roads) {
     endpointKeys.add(coordKey(road.coords[0]));
@@ -139,6 +148,13 @@ export function buildGraphFile(input: BuildInput): { file: GraphFile; report: Bu
       if (seen.has(dedupeKey)) continue;
       seen.add(dedupeKey);
 
+      const curvature = curvatureDegPerKm(piece);
+      const samples = sampleLine(piece);
+      let corridorM = CorridorIndex.CAP_M;
+      if (!corridor.empty) for (const [lon, lat] of samples) corridorM = Math.min(corridorM, corridor.distanceM(lon, lat));
+      const terrain = pieceTerrain(samples, input.elevationAt);
+      const score = scoreTerrain({ cls: road.cls, curvatureDegPerKm: curvature, terrain, corridorM });
+
       edges.push([
         from,
         to,
@@ -148,7 +164,10 @@ export function buildGraphFile(input: BuildInput): { file: GraphFile; report: Bu
         highways.add(road.highway),
         names.add(road.name),
         crossings.add(road.crossing),
-        Math.round(curvatureDegPerKm(piece)),
+        Math.round(curvature),
+        score.mountain,
+        score.corridor ? 1 : 0,
+        terrain.gradePct === null ? -1 : Math.round(terrain.gradePct * 10),
       ]);
     }
   }

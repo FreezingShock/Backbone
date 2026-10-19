@@ -23,6 +23,12 @@ export class RoutingGraph {
   readonly edgeName: Uint16Array;
   readonly edgeCrossing: Uint16Array;
   readonly edgeCurvature: Float64Array;
+  /** Mountain score, 0 to 100 (mountain.ts). Highways are 0. */
+  readonly edgeMountain: Uint8Array;
+  /** 1 for a valley road beside the 101 (CORRIDOR_WEIGHT applies in canyon routing), else 0. */
+  readonly edgeCorridor: Uint8Array;
+  /** Steepness in percent, or -1 when the piece has no elevation. Read it with gradeOf. */
+  readonly edgeGradePct: Float64Array;
   /** Pre-computed free-flow speed (m/s) for each edge, the curve limit included. */
   readonly edgeSpeedMs: Float64Array;
   readonly edgeGeometry: string[];
@@ -59,12 +65,15 @@ export class RoutingGraph {
     this.edgeName = new Uint16Array(m);
     this.edgeCrossing = new Uint16Array(m);
     this.edgeCurvature = new Float64Array(m);
+    this.edgeMountain = new Uint8Array(m);
+    this.edgeCorridor = new Uint8Array(m);
+    this.edgeGradePct = new Float64Array(m);
     this.edgeSpeedMs = new Float64Array(m);
     this.edgeGeometry = new Array<string>(m);
 
     const degree = new Int32Array(this.nodeCount + 1);
     file.edges.forEach((row, e) => {
-      const [from, to, poly, meters, cls, hw, name, crossing, curvature] = row;
+      const [from, to, poly, meters, cls, hw, name, crossing, curvature, mountain, corridor, gradeTenths] = row;
       this.edgeFrom[e] = from;
       this.edgeTo[e] = to;
       this.edgeMeters[e] = meters;
@@ -73,6 +82,9 @@ export class RoutingGraph {
       this.edgeName[e] = name;
       this.edgeCrossing[e] = crossing;
       this.edgeCurvature[e] = curvature;
+      this.edgeMountain[e] = mountain;
+      this.edgeCorridor[e] = corridor;
+      this.edgeGradePct[e] = gradeTenths < 0 ? -1 : gradeTenths / 10;
       this.edgeGeometry[e] = poly;
       const cls2: RoadClass = ROAD_CLASS_ORDER[cls];
       this.edgeSpeedMs[e] = pieceSpeedMs(cls2, file.highways[hw] ?? '', curvature);
@@ -150,6 +162,12 @@ export class RoutingGraph {
 
   crossingOf(edge: number): string {
     return this.crossings[this.edgeCrossing[edge]] ?? '';
+  }
+
+  /** Steepness in percent, or null when the piece has no elevation. */
+  gradeOf(edge: number): number | null {
+    const grade = this.edgeGradePct[edge];
+    return grade < 0 ? null : grade;
   }
 
   /** Mph for display, from the class table. */
