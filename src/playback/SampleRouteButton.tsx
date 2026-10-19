@@ -9,19 +9,32 @@ import { loadSampleRoute } from './sampleRoute';
  */
 export function SampleRouteButton({ controller }: { controller: PlaybackController | null }) {
   const [state, setState] = useState<'idle' | 'loading' | 'error'>('idle');
+  const [detail, setDetail] = useState('');
+
+  // Planning and starting fail in different places, so each reports its own message. A start error used to show
+  // as a road-layer error, which hid the real cause.
+  const fail = (what: string, error: unknown) => {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn(`Sample route: ${what}`, error);
+    setDetail(`${what}: ${message}`);
+    setState('error');
+  };
 
   const play = () => {
     if (!controller) return;
     setState('loading');
-    loadSampleRoute()
-      .then((route) => {
-        controller.start(route, 'orbit');
-        setState('idle');
-      })
-      .catch((error: unknown) => {
-        console.warn('Sample route: could not plan it', error);
-        setState('error');
-      });
+    setDetail('');
+    loadSampleRoute().then(
+      (route) => {
+        try {
+          controller.start(route, 'orbit');
+          setState('idle');
+        } catch (error: unknown) {
+          fail('Playback could not start', error);
+        }
+      },
+      (error: unknown) => fail('Could not plan the sample route', error),
+    );
   };
 
   return (
@@ -30,9 +43,7 @@ export function SampleRouteButton({ controller }: { controller: PlaybackControll
         <Chip onClick={play} disabled={!controller || state === 'loading'} className="self-start">
           {state === 'loading' ? 'Planning…' : 'Play sample route'}
         </Chip>
-        {state === 'error' && (
-          <p className="font-mono text-[11px] text-alert">Could not plan the sample route. Check the road layer.</p>
-        )}
+        {state === 'error' && <p className="font-mono text-[11px] leading-snug text-alert">{detail}</p>}
         <p className="font-mono text-[11px] leading-snug text-ink-3">
           Newbury Park to Calabasas over canyon crossings. Stop signs and lights are placeholders.
         </p>
