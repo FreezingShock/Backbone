@@ -27,12 +27,24 @@ export function TitleCartouche({ viewer }: TitleCartoucheProps) {
 
   useEffect(() => {
     if (!viewer) return;
-    const update = () => {
+    let frame = 0;
+    // Batch the camera's `changed` events to one measurement per frame. Keep the old bar when the scale is unchanged,
+    // so React skips the re-render.
+    const sync = () => {
+      frame = 0;
       const mpp = metersPerPixel(viewer);
-      setScale(mpp ? niceLength(mpp, BAR_TARGET_PX) : null);
+      const next = mpp ? niceLength(mpp, BAR_TARGET_PX) : null;
+      setScale((prev) => (prev && next && prev.meters === next.meters && prev.px === next.px ? prev : next));
     };
-    update();
-    return viewer.camera.changed.addEventListener(update);
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(sync);
+    };
+    sync();
+    const removeListener = viewer.camera.changed.addEventListener(schedule);
+    return () => {
+      removeListener();
+      cancelAnimationFrame(frame);
+    };
   }, [viewer]);
 
   return (
