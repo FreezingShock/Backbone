@@ -4,6 +4,7 @@ import { config, MAX_IMAGERY_LEVEL } from '../config';
 import type { LayerHandle, MapLayer } from '../layers/types';
 import type { MapLook } from './look';
 import { createHillshade } from './hillshade';
+import { applyDaylight } from './daylight';
 import { attachFreeFly } from './freeFly';
 import { createOpenTerrain } from './openTerrain';
 import type { Place } from './places';
@@ -50,6 +51,8 @@ export function MapView({
   // Bumped when layers finish mounting, so visibility is applied to the new handles.
   const [mountedVersion, setMountedVersion] = useState(0);
   const handlesRef = useRef(new Map<string, LayerHandle>());
+  // The clock time the viewer started with. The dark theme returns to it. See src/map/daylight.ts.
+  const startTimeRef = useRef<Cesium.JulianDate | null>(null);
   const lookRef = useRef(look);
   const statusRef = useRef(onStatus);
   const speedRef = useRef(cameraSpeed);
@@ -86,8 +89,7 @@ export function MapView({
 
     const { scene } = created;
     scene.globe.depthTestAgainstTerrain = true;
-    if (scene.skyAtmosphere) scene.skyAtmosphere.show = false;
-    scene.globe.showGroundAtmosphere = false;
+    startTimeRef.current = Cesium.JulianDate.clone(created.clock.currentTime);
     // Draw only when something changes. attachRenderQuality adds a heartbeat so nothing stalls.
     scene.requestRenderMode = true;
 
@@ -158,13 +160,14 @@ export function MapView({
     };
   }, [viewer]);
 
-  // Map look: background, globe color, lighting, imagery, then every layer's colors.
+  // Map look: background, globe color, sun and sky, lighting, imagery, then every layer's colors.
   useEffect(() => {
     lookRef.current = look;
     if (!viewer) return;
     const { scene } = viewer;
     scene.backgroundColor = Cesium.Color.fromCssColorString(look.space);
     scene.globe.baseColor = Cesium.Color.fromCssColorString(look.globe);
+    if (startTimeRef.current) applyDaylight(viewer, look.theme === 'light', startTimeRef.current);
     scene.globe.enableLighting = look.lighting; // Shading from the terrain gives the hillshade look.
     for (const handle of handlesRef.current.values()) handle.restyle(look);
     scene.requestRender();
