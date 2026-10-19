@@ -26,7 +26,10 @@ interface RoadCollection {
 
 let collection: Promise<RoadCollection> | null = null;
 
-/** Loads the road file once. The roads, highway and demo route layers all share it. A failed load can be retried. */
+/**
+ * Loads the road file once. The roads, highway and demo route layers all share it. A failed load can be retried.
+ * The parsed file is large, so the roads and highway layers release it after they build (see releaseRoadCollection).
+ */
 export function loadRoadCollection(): Promise<RoadCollection> {
   collection ??= fetch(DATA_URL)
     .then((response) => {
@@ -38,6 +41,28 @@ export function loadRoadCollection(): Promise<RoadCollection> {
       throw error;
     });
   return collection;
+}
+
+/**
+ * Drops the cached road file, so the parsed features can be garbage collected. The geometry already built stays.
+ * A later loadRoadCollection call fetches it again (the browser usually serves it from its HTTP cache).
+ */
+export function releaseRoadCollection(): void {
+  collection = null;
+}
+
+/**
+ * Local streets and collectors are under a pixel wide from far away, so they are not drawn above these heights
+ * (meters above the ellipsoid). A 10% band stops them flickering on and off at the edge.
+ */
+const HIDE_ABOVE_M: Partial<Record<RoadClass, number>> = { local: 45_000, collector: 90_000 };
+const SHOW_BELOW_RATIO = 0.9;
+
+/** Whether a road set draws at this camera height. `culled` is what it did last frame, for the band. */
+export function drawsAtAltitude(cls: RoadClass, altitude: number, culled: boolean): boolean {
+  const limit = HIDE_ABOVE_M[cls];
+  if (limit === undefined) return true;
+  return culled ? altitude < limit * SHOW_BELOW_RATIO : altitude < limit;
 }
 
 function roadColor(look: MapLook, cls: RoadClass, dimmed = false): Cesium.Color {
@@ -62,6 +87,8 @@ export interface RoadSet {
   cls: RoadClass;
   primitive: Cesium.GroundPolylinePrimitive;
   ids: string[];
+  /** True while the set is hidden by altitude. See drawsAtAltitude. */
+  culled: boolean;
 }
 
 /** One primitive per class, since the width is set per geometry. Returns null when no road has that class. */
@@ -89,7 +116,7 @@ export function buildRoadSet(viewer: Cesium.Viewer, features: RoadFeature[], cls
     appearance: new Cesium.PolylineColorAppearance(),
   });
   viewer.scene.primitives.add(primitive);
-  return { cls, primitive, ids };
+  return { cls, primitive, ids, culled: false };
 }
 
 interface LabelSpot {
@@ -197,6 +224,16 @@ export const roadsLayer: MapLayer = {
     let visible = true;
     let look = initialLook;
 
+    const cullByAltitude = () => {
+      const altitude = viewer.camera.positionCartographic.height;
+      for (const set of sets) {
+        const drawn = drawsAtAltitude(set.cls, altitude, set.culled);
+        set.culled = !drawn;
+        set.primitive.show = visible && drawn;
+      }
+    };
+    const removeCull = viewer.scene.preRender.addEventListener(cullByAltitude);
+
     const paintLabels = () => {
       for (let i = 0; i < labels.length; i++) {
         const label = labels.get(i);
@@ -216,6 +253,7 @@ export const roadsLayer: MapLayer = {
           set.primitive.show = visible;
           sets.push(set);
         }
+        releaseRoadCollection();
 
         for (const spot of pickLabels(data.features)) {
           const style = LABEL_STYLE[spot.cls];
@@ -243,7 +281,7 @@ export const roadsLayer: MapLayer = {
     return {
       show(next) {
         visible = next;
-        for (const set of sets) set.primitive.show = next;
+        for (const set of sets) set.primitive.show = next && !set.culled;
         labels.show = next;
       },
       restyle(next) {
@@ -253,6 +291,7 @@ export const roadsLayer: MapLayer = {
       },
       destroy() {
         destroyed = true;
+        removeCull();
         if (viewer.isDestroyed()) return;
         for (const set of sets) viewer.scene.primitives.remove(set.primitive);
         viewer.scene.primitives.remove(labels);
@@ -284,6 +323,7 @@ export const highwaysLayer: MapLayer = {
       .then((data) => {
         if (destroyed || viewer.isDestroyed()) return;
         const set = buildRoadSet(viewer, data.features, 'highway', look);
+        releaseRoadCollection();
         if (!set) return;
         sets.push(set);
         paintRoadSets(viewer, sets, (cls) => roadColor(look, cls, dimmed));
