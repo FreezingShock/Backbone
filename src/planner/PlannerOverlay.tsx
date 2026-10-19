@@ -7,13 +7,18 @@ import type { Route, Stop } from './types';
 
 const ROUTE_WIDTH = 6;
 const MARKER_PX = 26;
+/** Share of the chosen route's opacity that alternates keep. */
+const ALTERNATE_ALPHA = 0.35;
 const markerCache = new Map<string, HTMLCanvasElement>();
 
 export interface PlannerOverlayProps {
   viewer: Cesium.Viewer | null;
   look: MapLook;
   stops: Stop[];
+  /** The chosen route, drawn solid. */
   route: Route | null;
+  /** Other routes between the same stops, drawn faint. */
+  alternates: Route[];
   pickMode: boolean;
   onPickStop: (lon: number, lat: number) => void;
 }
@@ -48,31 +53,40 @@ function markerImage(letter: string, look: MapLook): HTMLCanvasElement {
 }
 
 /** Route line, stop markers and the pick-on-map click, as one Cesium overlay. Mounts only while the planner is open. */
-export function PlannerOverlay({ viewer, look, stops, route, pickMode, onPickStop }: PlannerOverlayProps) {
-  // Route line: a ground polyline in the look's route color. Rebuilt when the route or the color changes.
+export function PlannerOverlay({ viewer, look, stops, route, alternates, pickMode, onPickStop }: PlannerOverlayProps) {
+  // Route lines: the chosen route in the look's route color, and the alternates faint. Rebuilt when they change.
   useEffect(() => {
-    if (!viewer || !route || route.geometry.length < 2) return;
-    const color = Cesium.Color.fromCssColorString(look.roads.route.color).withAlpha(look.roads.route.alpha);
-    const primitive = new Cesium.GroundPolylinePrimitive({
-      geometryInstances: new Cesium.GeometryInstance({
-        id: 'planner-route',
-        geometry: new Cesium.GroundPolylineGeometry({
-          positions: Cesium.Cartesian3.fromDegreesArray(route.geometry.flat()),
-          width: ROUTE_WIDTH,
-        }),
-        attributes: { color: Cesium.ColorGeometryInstanceAttribute.fromColor(color) },
-      }),
-      appearance: new Cesium.PolylineColorAppearance(),
-    });
-    viewer.scene.primitives.add(primitive);
+    if (!viewer) return;
+    const base = look.roads.route;
+    const lines: { route: Route; alpha: number }[] = [
+      ...alternates.map((alternate) => ({ route: alternate, alpha: base.alpha * ALTERNATE_ALPHA })),
+      ...(route ? [{ route, alpha: base.alpha }] : []),
+    ];
+    const primitives = lines
+      .filter((line) => line.route.geometry.length >= 2)
+      .map((line) => {
+        const color = Cesium.Color.fromCssColorString(base.color).withAlpha(line.alpha);
+        return new Cesium.GroundPolylinePrimitive({
+          geometryInstances: new Cesium.GeometryInstance({
+            id: 'planner-route',
+            geometry: new Cesium.GroundPolylineGeometry({
+              positions: Cesium.Cartesian3.fromDegreesArray(line.route.geometry.flat()),
+              width: ROUTE_WIDTH,
+            }),
+            attributes: { color: Cesium.ColorGeometryInstanceAttribute.fromColor(color) },
+          }),
+          appearance: new Cesium.PolylineColorAppearance(),
+        });
+      });
+    for (const primitive of primitives) viewer.scene.primitives.add(primitive);
     viewer.scene.requestRender();
     return () => {
       if (!viewer.isDestroyed()) {
-        viewer.scene.primitives.remove(primitive);
+        for (const primitive of primitives) viewer.scene.primitives.remove(primitive);
         viewer.scene.requestRender();
       }
     };
-  }, [viewer, route, look]);
+  }, [viewer, route, alternates, look]);
 
   // Stop markers. Rebuilt with the stops; the collection is small.
   useEffect(() => {
