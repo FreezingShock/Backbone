@@ -238,3 +238,11 @@ export function wrapAngle(angle: number): number {
 export function lerpAngle(current: number, target: number, alpha: number): number {
   return current + wrapAngle(target - current) * alpha;
 }
+
+/** The next `count` placed steps after `index`, with each one's distance ahead of `meters`, in order of travel. */
+export function upcomingSteps(placed: PlacedStep[], index: number, meters: number, count: number): { step: Step; meters: number }[] {
+  return placed.slice(index + 1, index + 1 + count).map((item) => ({
+    step: item.step,
+    meters: Math.max(item.meters - meters, 0),
+  }));
+}

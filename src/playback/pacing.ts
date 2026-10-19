@@ -20,14 +20,17 @@ export function routeSecondsPerSecond(speed: PlaybackSpeed, routeDurationS: numb
   return speed * ROUTE_SECONDS_PER_REAL_SECOND;
 }
 
-/** Opening shot, in real seconds: pull back to show the whole route, sweep along it, then dive to the start. */
+/**
+ * Opening shot, in real seconds: pull back to show the whole route, fly in behind the start, then settle into the
+ * follow camera. Every move ends at the start, so the opening never flies back across the route.
+ */
 export const INTRO = {
   overviewS: 2.2,
-  sweepS: 3.6,
-  diveS: 2.0,
+  approachS: 2.6,
+  settleS: 2.2,
 } as const;
 
-export const INTRO_TOTAL_S = INTRO.overviewS + INTRO.sweepS + INTRO.diveS;
+export const INTRO_TOTAL_S = INTRO.overviewS + INTRO.approachS + INTRO.settleS;
 
 /** Smooth start and stop for the intro moves. */
 export function smoothstep(t: number): number {
