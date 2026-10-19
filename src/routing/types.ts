@@ -119,7 +119,7 @@ export interface PlanOptions {
   avoidHighways?: boolean;
   /** Default false. Local streets (service roads, tracks, neighborhood streets) are priced at three times their time, below a freeway. */
   avoidLocal?: boolean;
-  /** planRoutes only: how many distinct canyon alternatives to return, 1 to 3. Default 3. */
+  /** planRoutes only: how many distinct canyon routes to return, 1 to 6. Default 6. */
   maxRoutes?: number;
 }
 

@@ -162,6 +162,15 @@ test('the built graph routes Newbury Park to Woodland Hills on canyon roads, wit
   for (const route of routes) assert.ok(route.durationS > 15 * 60 && route.durationS < 2 * 3600, `${route.label} time ${route.durationS}`);
 });
 
+test('the built graph offers several canyon routes from Newbury Park to Woodland Hills, none on a freeway', () => {
+  setRoutingGraph(REAL_GRAPH);
+  const routes = planRoutes([PLACE('newbury-park'), PLACE('woodland-hills')], { avoidHighways: true, avoidLocal: true });
+  assert.ok(routes.length >= 3, `expected at least three canyon routes, got ${routes.length}`);
+  for (const route of routes) assert.equal(route.highwayShare, 0, `${route.label} uses a freeway`);
+  const viaLynn = routes.filter((route) => route.legs.some((leg) => leg.steps.some((step) => step.roadName === 'Lynn Rd')));
+  assert.ok(viaLynn.length >= 1, `no route uses Lynn Rd: ${routes.map((route) => route.label).join(', ')}`);
+});
+
 test('the built graph routes the other valley-to-canyon pairs with no freeway in the preferred route', () => {
   setRoutingGraph(REAL_GRAPH);
   const pairs: [string, string][] = [

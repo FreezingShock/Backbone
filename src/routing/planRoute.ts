@@ -27,8 +27,10 @@ export const CLASS_WEIGHT: Record<RoadClass, number> = {
   local: 1.2,
   highway: 4,
 };
-/** An alternative with more than this share of its distance on a highway is not offered as a canyon alternative. */
-const ALTERNATIVE_MAX_HIGHWAY_SHARE = 0.1;
+/** An alternative with any distance on a highway is not offered as a canyon alternative. */
+const ALTERNATIVE_MAX_HIGHWAY_SHARE = 0;
+/** Most routes planRoutes returns. The chooser lists them all, so a rider can compare canyons. */
+const MAX_ROUTE_OPTIONS = 6;
 /** Weight for local streets when avoidLocal is set. Kept under the freeway weight, so a freeway is still the last resort. */
 const LOCAL_AVOID_WEIGHT = 3;
 /** Weight on a road named by an earlier alternative, so the next alternative takes a different canyon. */
@@ -220,13 +222,13 @@ export function planRoute(stops: Stop[], options: PlanOptions = {}): Route {
  * Up to `maxRoutes` distinct canyon routes through the stops, preferred first. The first is what planRoute returns.
  * Each later one is found with a penalty on the main roads already used, so it takes a different canyon crossing.
  * Each route carries its main road name as `label`, its share on highways as `highwayShare`, and its position as
- * `alternative`. An alternative is dropped when it repeats a main road, runs mostly on a freeway, or has no canyon
+ * `alternative`. An alternative is dropped when it repeats a main road, runs on any freeway, or has no canyon
  * crossing as its main road, so the result may hold fewer than maxRoutes.
  */
 export function planRoutes(stops: Stop[], options: PlanOptions = {}): Route[] {
   const graph = requireGraph();
   if (stops.length < 2) throw new Error('A route needs at least two stops.');
-  const limit = Math.max(1, Math.min(3, options.maxRoutes ?? 3));
+  const limit = Math.max(1, Math.min(MAX_ROUTE_OPTIONS, options.maxRoutes ?? MAX_ROUTE_OPTIONS));
   const stopWarnings: string[] = [];
   const nodes = stops.map((stop) => nodeFor(graph, stop, stopWarnings));
 

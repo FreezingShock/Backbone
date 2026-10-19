@@ -93,7 +93,7 @@ export interface RouteOption {
 }
 
 /**
- * Route options for the chooser, preferred first: up to three distinct canyon routes through the same stops, each
+ * Route options for the chooser, preferred first: up to six distinct canyon routes through the same stops, each
  * on a different main road (the engine's planRoutes). Every option is labeled with the canyon it uses.
  */
 export async function planRouteOptions(stops: readonly Stop[], request: PlanRequest): Promise<RouteOption[]> {
