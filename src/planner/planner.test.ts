@@ -120,6 +120,7 @@ test('a route is lettered legs with times, steps and a hardest-leg rating', () =
     ['start', 'middle'],
   );
   assert.equal(route.departAt, depart.toISOString());
+  assert.ok(route.warnings.some((warning) => warning.includes('stop signs')));
   assert.equal(route.arriveAt, new Date(depart.getTime() + route.durationS * 1000).toISOString());
   assert.ok(route.distanceM > 0 && route.durationS > 0);
   // The second leg runs east on the crossing, then the route rating is the harder of the two legs.

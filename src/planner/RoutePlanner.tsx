@@ -194,6 +194,11 @@ export function RoutePlanner({ viewer, look }: RoutePlannerProps) {
           {result.loading && <p className="font-mono text-[12px] text-ink-2">Planning…</p>}
 
           {route && <RouteSummary route={route} />}
+          {route?.warnings.map((warning) => (
+            <p key={warning} className="font-mono text-[11px] text-ink-3">
+              {warning}
+            </p>
+          ))}
 
           <div className="flex flex-wrap items-center gap-2">
             <button

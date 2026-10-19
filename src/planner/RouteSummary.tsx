@@ -1,6 +1,6 @@
 import { DifficultyChip } from './DifficultyChip';
 import { formatClock, formatDistance, formatDuration, stopLetter } from './format';
-import type { Route } from './types';
+import type { Route, StepKind } from './types';
 
 /** Totals, then each leg with its times and turn-by-turn steps. */
 export function RouteSummary({ route }: { route: Route }) {
@@ -62,18 +62,26 @@ export function RouteSummary({ route }: { route: Route }) {
   );
 }
 
-function stepGlyph(kind: string): string {
+function stepGlyph(kind: StepKind): string {
   switch (kind) {
     case 'turn-left':
       return '↰';
     case 'turn-right':
       return '↱';
-    case 'bear-left':
+    case 'sharp-left':
+      return '↲';
+    case 'sharp-right':
+      return '↳';
+    case 'slight-left':
       return '↖';
-    case 'bear-right':
+    case 'slight-right':
       return '↗';
     case 'u-turn':
       return '↶';
+    case 'stop-sign':
+      return '■';
+    case 'traffic-signal':
+      return '▲';
     case 'depart':
       return '●';
     case 'arrive':

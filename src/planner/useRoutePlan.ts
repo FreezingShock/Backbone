@@ -32,7 +32,7 @@ export function useRoutePlan(state: PlanState): PlanResult {
     let cancelled = false;
     setResult((previous) => ({ ...previous, loading: true, error: null }));
     const timer = window.setTimeout(() => {
-      const departAt = state.depart.mode === 'at' ? new Date(state.depart.iso) : new Date();
+      const departAt = state.depart.mode === 'at' ? state.depart.iso : new Date().toISOString();
       planRoute(state.stops, { network: state.network, departAt })
         .then((route) => {
           if (!cancelled) setResult({ route, error: null, loading: false });

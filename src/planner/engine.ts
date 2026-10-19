@@ -16,12 +16,11 @@ import {
   type RoadFeature,
   type RoadGraph,
 } from '../lib/roads/route';
-import type { Difficulty, Leg, Network, Route, Stop, Step } from './types';
+import type { Difficulty, Leg, Network, PlanOptions, Route, Stop, Step, StepKind } from './types';
 
-export interface PlanOptions {
+/** The contract's PlanOptions, plus which roads to use. */
+export interface PlanRequest extends PlanOptions {
   network: Network;
-  /** Defaults to now. */
-  departAt?: Date;
 }
 
 const ROAD_FILE = '/data/roads.geojson';
@@ -36,6 +35,9 @@ const CLASS_WEIGHT: Record<RoadClass, number> = { highway: 0, arterial: 0.5, cro
 /** Roads that make up a named intersection between two through roads. */
 const MAJOR_CLASSES: readonly RoadClass[] = ['crossing', 'arterial', 'collector'];
 const CITY_KINDS: readonly Place['kind'][] = ['city', 'town', 'neighborhood'];
+/** Stops this far from a road still route, but the rider is told how far they are walking to it. */
+const SNAP_WARN_M = 150;
+const MOCK_WARNING = 'Mock routing: stop signs and traffic signals are not in the road data yet.';
 
 export interface NetworkData {
   graph: RoadGraph;
@@ -184,13 +186,15 @@ function bearingDeg(a: LonLat, b: LonLat): number {
 }
 
 /** Turn from the segment a→b onto b→c. Positive angles turn right. */
-function maneuver(a: LonLat, b: LonLat, c: LonLat): { kind: string; text: string } {
+function maneuver(a: LonLat, b: LonLat, c: LonLat): { kind: StepKind; text: string } {
   const delta = ((bearingDeg(b, c) - bearingDeg(a, b) + 540) % 360) - 180;
   const abs = Math.abs(delta);
   const right = delta > 0;
-  if (abs < 25) return { kind: 'continue', text: 'Continue' };
+  if (abs < 25) return { kind: 'straight', text: 'Continue' };
   if (abs > 160) return { kind: 'u-turn', text: 'Make a U-turn' };
-  if (abs < 60) return right ? { kind: 'bear-right', text: 'Bear right' } : { kind: 'bear-left', text: 'Bear left' };
+  if (abs < 60) {
+    return right ? { kind: 'slight-right', text: 'Bear right' } : { kind: 'slight-left', text: 'Bear left' };
+  }
   return right ? { kind: 'turn-right', text: 'Turn right' } : { kind: 'turn-left', text: 'Turn left' };
 }
 
@@ -215,17 +219,17 @@ function buildSteps(graph: RoadGraph, path: string[], edges: RoadEdge[], to: Sto
   });
 
   const point = (key: string): LonLat => graph.nodes.get(key) ?? [0, 0];
-  const steps: Step[] = runs.map((run, k) => {
+  const steps: Step[] = runs.map((run, k): Step => {
     const [lon, lat] = point(path[run.startIndex]);
     const roadName = run.name || 'unnamed road';
     const base = { roadName, lon, lat, distanceM: run.meters, durationS: run.seconds };
-    if (k === 0) return { kind: 'depart', ...base, instruction: `Head on ${roadName}` };
+    if (k === 0) return { kind: 'depart' as const, ...base, instruction: `Head on ${roadName}` };
     const turn = maneuver(
       point(path[run.startIndex - 1]),
       point(path[run.startIndex]),
       point(path[run.startIndex + 1]),
     );
-    const onto = turn.kind === 'continue' ? 'Continue onto' : `${turn.text} onto`;
+    const onto = turn.kind === 'straight' ? 'Continue onto' : `${turn.text} onto`;
     return { kind: turn.kind, ...base, instruction: `${onto} ${roadName}` };
   });
 
@@ -269,10 +273,14 @@ const DIFFICULTY_RANK: Record<Difficulty, number> = { easy: 0, intermediate: 1, 
  */
 export function routeOnGraph(graph: RoadGraph, stops: readonly Stop[], departAt: Date): Route {
   if (stops.length < 2) throw new Error('Add a second stop to plan a route.');
+  const warnings = [MOCK_WARNING];
   const nodes = stops.map((stop) => {
     const near = nearestNode(graph, stop.lon, stop.lat);
     if (!near || near.meters > SNAP_LIMIT_M) {
       throw new Error(`No road on this network within 3 km of ${stop.name}.`);
+    }
+    if (near.meters > SNAP_WARN_M) {
+      warnings.push(`${stop.name} is ${Math.round(near.meters)} m from the nearest road on this network.`);
     }
     return near.key;
   });
@@ -305,11 +313,13 @@ export function routeOnGraph(graph: RoadGraph, stops: readonly Stop[], departAt:
     geometry,
     departAt: departAt.toISOString(),
     arriveAt: new Date(departAt.getTime() + durationS * 1000).toISOString(),
+    warnings,
   };
 }
 
 /** Plans a route on the chosen network. Same signature as the routing engine's planRoute. */
-export async function planRoute(stops: readonly Stop[], options: PlanOptions): Promise<Route> {
+export async function planRoute(stops: readonly Stop[], options: PlanRequest): Promise<Route> {
   const data = await loadNetwork(options.network);
-  return routeOnGraph(data.graph, stops, options.departAt ?? new Date());
+  const departAt = options.departAt ? new Date(options.departAt) : new Date();
+  return routeOnGraph(data.graph, stops, departAt);
 }
