@@ -9,6 +9,7 @@ import { attachFreeFly } from './freeFly';
 import { createOpenTerrain } from './openTerrain';
 import type { Place } from './places';
 import { attachRenderQuality } from './renderQuality';
+import { attachPauseWhenHidden } from './pauseWhenHidden';
 import type { CameraMode, RuntimeStatus } from './types';
 
 export interface FlyTarget {
@@ -234,6 +235,12 @@ export function MapView({
   useEffect(() => {
     if (!viewer) return;
     return attachRenderQuality(viewer);
+  }, [viewer]);
+
+  // No drawing in a hidden tab. Starts again when the tab is shown.
+  useEffect(() => {
+    if (!viewer) return;
+    return attachPauseWhenHidden(viewer);
   }, [viewer]);
 
   useEffect(() => {

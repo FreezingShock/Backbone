@@ -91,6 +91,12 @@ export function mountPlaceMarkers(
   let visible = true;
   let destroyed = false;
   const scratch = new Cesium.Cartesian2();
+  // Declutter only reruns when the camera, the viewport or the terrain heights change. Idle frames skip it.
+  const lastPosition = new Cesium.Cartesian3();
+  const lastDirection = new Cesium.Cartesian3();
+  let lastWidth = -1;
+  let lastHeight = -1;
+  let dirty = true;
 
   for (const place of places) {
     const style = STYLE[place.kind];
@@ -124,6 +130,10 @@ export function mountPlaceMarkers(
     markers.push({ place, position, style, label, icon, textWidth: measure(text, style.font) });
   }
 
+  // Box objects are reused each run, so moving the camera does not allocate one per marker per frame.
+  const boxes: (LabelBox | null)[] = markers.map(() => null);
+  const slots: LabelBox[] = [];
+
   // Terrain height: markers sit on the ground, and the declutter projects them. Without the real height, a peak
   // would be projected at sea level and its box would land far from its drawn label. Sample once per terrain
   // provider, since the provider is swapped after the layers mount (ellipsoid first, then open or ion terrain).
@@ -147,31 +157,51 @@ export function mountPlaceMarkers(
           marker.label.position = marker.position;
           marker.icon.position = marker.position;
         });
+        dirty = true;
       })
       .catch(() => {
         // Keep the ground-level positions. Labels still clamp to the terrain when it renders.
       });
   };
 
-  // Each frame: level of detail first, then declutter the labels that are left.
+  // Runs in preRender: after the camera has moved for this frame, and before the frame is drawn, so the labels
+  // shown are the ones for the frame on screen.
   const update = () => {
     if (destroyed || viewer.isDestroyed()) return;
     if (!visible) return;
     syncHeights();
 
     const { scene, camera } = viewer;
-    const boxes: (LabelBox | null)[] = markers.map((marker) => {
-      if (Cesium.Cartesian3.distance(camera.positionWC, marker.position) > marker.style.maxDistance) return null;
+    const moved =
+      !Cesium.Cartesian3.equalsEpsilon(camera.positionWC, lastPosition, 0, 1e-6) ||
+      !Cesium.Cartesian3.equalsEpsilon(camera.directionWC, lastDirection, 0, 1e-9) ||
+      scene.drawingBufferWidth !== lastWidth ||
+      scene.drawingBufferHeight !== lastHeight;
+    if (!moved && !dirty) return;
+    Cesium.Cartesian3.clone(camera.positionWC, lastPosition);
+    Cesium.Cartesian3.clone(camera.directionWC, lastDirection);
+    lastWidth = scene.drawingBufferWidth;
+    lastHeight = scene.drawingBufferHeight;
+    dirty = false;
+
+    markers.forEach((marker, index) => {
+      if (Cesium.Cartesian3.distance(camera.positionWC, marker.position) > marker.style.maxDistance) {
+        boxes[index] = null;
+        return;
+      }
       const screen = scene.cartesianToCanvasCoordinates(marker.position, scratch);
-      if (!screen) return null;
+      if (!screen) {
+        boxes[index] = null;
+        return;
+      }
       const half = marker.style.boxHeight / 2;
-      return {
-        left: screen.x - ICON_PX / 2,
-        right: screen.x + TEXT_OFFSET_PX + marker.textWidth,
-        top: screen.y - half,
-        bottom: screen.y + half,
-        priority: marker.style.priority,
-      };
+      const slot = (slots[index] ??= { left: 0, top: 0, right: 0, bottom: 0, priority: 0 });
+      slot.left = screen.x - ICON_PX / 2;
+      slot.right = screen.x + TEXT_OFFSET_PX + marker.textWidth;
+      slot.top = screen.y - half;
+      slot.bottom = screen.y + half;
+      slot.priority = marker.style.priority;
+      boxes[index] = slot;
     });
 
     const shown = declutter(boxes, 6);
@@ -181,12 +211,13 @@ export function mountPlaceMarkers(
     });
   };
 
-  const removeUpdate = viewer.scene.postRender.addEventListener(update);
+  const removeUpdate = viewer.scene.preRender.addEventListener(update);
   const detachPicking = attachPlacePicking(viewer);
 
   return {
     show(next) {
       visible = next;
+      dirty = true;
       labels.show = next;
       icons.show = next;
     },

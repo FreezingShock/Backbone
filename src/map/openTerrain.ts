@@ -7,7 +7,8 @@ const TILE_URL = 'https://elevation-tiles-prod.s3.amazonaws.com/terrarium/{z}/{x
 /** Highest zoom the source has. Larger Cesium levels reuse it. */
 export const MAX_TERRARIUM_ZOOM = 15;
 const GRID = 65;
-const CACHE_LIMIT = 256;
+/** Decoded source tiles kept in memory. Each is 256 x 256 RGBA, 256 KB, so 96 is about 24 MB. A view needs far fewer. */
+const CACHE_LIMIT = 96;
 const CREDIT = 'Elevation: AWS Terrain Tiles (USGS and other public DEMs)';
 
 interface DecodedTile {
