@@ -155,12 +155,16 @@ export function distanceAtSeconds(track: Track, seconds: number): number {
   return cumM[i] + ((cumM[i + 1] - cumM[i]) * (target - cumS[i])) / span;
 }
 
-/** Nearest track distance to a point. Linear scan; called once per step when a route starts. */
-export function distanceOfPoint(track: Track, lon: number, lat: number): number {
+/**
+ * Nearest track distance to a point, searching only at or after `fromM`. A route can cross or revisit the same
+ * junction, so the search moves forward with the steps instead of taking the closest pass on the whole track.
+ */
+export function distanceOfPoint(track: Track, lon: number, lat: number, fromM = 0): number {
   const { points, cumM } = track;
-  let bestM = 0;
+  const startM = Math.min(Math.max(fromM, 0), track.totalM);
+  let bestM = startM;
   let bestSq = Infinity;
-  for (let i = 0; i < points.length - 1; i++) {
+  for (let i = Math.max(floorIndex(cumM, startM), 0); i < points.length - 1; i++) {
     const a = points[i];
     const b = points[i + 1];
     const ax = (a[0] - lon) * EARTH_LON_M * Math.cos((lat * Math.PI) / 180);
@@ -170,7 +174,10 @@ export function distanceOfPoint(track: Track, lon: number, lat: number): number 
     const dx = bx - ax;
     const dy = by - ay;
     const len2 = dx * dx + dy * dy;
-    const f = len2 > 0 ? Math.min(Math.max(-(ax * dx + ay * dy) / len2, 0), 1) : 0;
+    // Only the part of this segment at or after the search start is eligible.
+    const span = cumM[i + 1] - cumM[i];
+    const fromF = span > 0 ? Math.min(Math.max((startM - cumM[i]) / span, 0), 1) : 0;
+    const f = len2 > 0 ? Math.min(Math.max(-(ax * dx + ay * dy) / len2, fromF), 1) : fromF;
     const px = ax + dx * f;
     const py = ay + dy * f;
     const sq = px * px + py * py;
@@ -189,11 +196,16 @@ export interface PlacedStep {
   seconds: number;
 }
 
-/** Puts every step on the track, in order of travel. */
+/**
+ * Puts every step on the track, in order of travel. Each step is searched for only after the one before it, so a
+ * stop on a second pass of a junction lands on that pass, and the depart and arrive steps stay at the two ends.
+ */
 export function placeSteps(track: Track, steps: Step[]): PlacedStep[] {
   const sample: TrackSample = { lon: 0, lat: 0, heading: 0, seconds: 0 };
+  let cursor = 0;
   const placed = steps.map((step) => {
-    const meters = distanceOfPoint(track, step.lon, step.lat);
+    const meters = distanceOfPoint(track, step.lon, step.lat, cursor);
+    cursor = meters;
     sampleAtDistance(track, meters, sample);
     return { step, meters, seconds: sample.seconds };
   });

@@ -93,6 +93,8 @@ const MAX_FRAME_S = 0.1;
 const CALLOUTS_AHEAD = 3;
 /** Upcoming maneuvers listed in the navigation panel at once. */
 const UPCOMING_COUNT = 4;
+/** Terrain level used to read the ground under the route start when the globe has not loaded it yet. */
+const START_SAMPLE_LEVEL = 13;
 const HIGHLIGHT_WIDTH = 9;
 const MARKER_PIXELS = 12;
 
@@ -168,9 +170,33 @@ export function createPlaybackController(viewer: Cesium.Viewer, initialLook: Map
   let snapshot: PlaybackSnapshot = IDLE_SNAPSHOT;
   const listeners = new Set<() => void>();
 
-  const sampleGround = (lon: number, lat: number, fallback: number): number => {
+  /** Ground height from the loaded globe, or undefined when the tiles under that point are not loaded yet. */
+  const loadedGround = (lon: number, lat: number): number | undefined => {
     Cesium.Cartographic.fromDegrees(lon, lat, 0, scratchCarto);
-    return scene.globe.getHeight(scratchCarto) ?? fallback;
+    return scene.globe.getHeight(scratchCarto);
+  };
+
+  const sampleGround = (lon: number, lat: number, fallback: number): number => loadedGround(lon, lat) ?? fallback;
+
+  // Play can start where the terrain is not loaded yet. The globe has no height there, so the camera would start at
+  // sea level, inside a mountain, and only rise once the tiles arrive. Ask the terrain provider for the start point
+  // instead, and keep its answer as the ground until the globe has its own. Each start gets its own token, so a
+  // late answer from an earlier route is ignored.
+  let startSampleToken = 0;
+  const settleStartGround = (lon: number, lat: number) => {
+    if (loadedGround(lon, lat) !== undefined) return;
+    const token = ++startSampleToken;
+    Cesium.sampleTerrain(viewer.terrainProvider, START_SAMPLE_LEVEL, [Cesium.Cartographic.fromDegrees(lon, lat)])
+      .then(([sampled]) => {
+        if (destroyed || viewer.isDestroyed() || token !== startSampleToken || !route) return;
+        if (sampled && Number.isFinite(sampled.height)) {
+          groundHeight = sampled.height;
+          cameraGround = sampled.height;
+        }
+      })
+      .catch(() => {
+        // Keep the sea-level fallback. The clamp still lifts the camera once the globe reports the ground.
+      });
   };
 
   const trackAt = (meters: number): TrackSample => sampleAtDistance(track!, meters, scratchSample);
@@ -491,6 +517,7 @@ export function createPlaybackController(viewer: Cesium.Viewer, initialLook: Map
     const first = trackAt(0);
     groundHeight = sampleGround(first.lon, first.lat, 0);
     cameraGround = groundHeight;
+    settleStartGround(first.lon, first.lat);
     orbitAngle = first.heading;
     chaseHeading = first.heading;
     cameraMode = cameraArg;
