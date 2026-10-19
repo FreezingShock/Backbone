@@ -10,7 +10,8 @@
     "build": "node scripts/copy-cesium.mjs && tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
-    "postinstall": "node scripts/copy-cesium.mjs"
+    "postinstall": "node scripts/copy-cesium.mjs",
+    "routing:build": "npx -y tsx scripts/build-routing-graph.ts"
   },
   "license": "UNLICENSED",
   "dependencies": {

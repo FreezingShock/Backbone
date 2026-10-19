@@ -1,0 +1,4 @@
+{
+  "source": "Hand-curated stop signs and traffic signals. Empty until a checked source exists. Each entry needs a source note. Entries farther than 30 m from a mapped junction are dropped at build time.",
+  "controls": []
+}

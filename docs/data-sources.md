@@ -35,6 +35,30 @@ Crossing and arterial names are labeled. Labels are spaced apart and shown when 
 
 The demo route (Layers > Canyon-only demo route) plans Newbury Park, Westlake Village, Thousand Oaks, and Calabasas over crossings only, with no highway class edges. It is computed in the browser from the road graph (`src/lib/roads/route.ts`, tested in `src/lib/roads/route.test.ts`). Its stop coordinates are approximate town centers, not surveyed points.
 
+## Routing (Canyon Cutting)
+
+Checked 2026-10-19. Built by `npm run routing:build` (scripts/build-routing-graph.ts) into `public/data/routing-graph.json` (about 1.6 MB, 17.8k junctions, 21.4k road pieces). The engine is in `src/routing/`. It runs in the browser and needs no server.
+
+| Input | Source | Status |
+|-------|--------|--------|
+| Road lines, names, classes | `public/data/roads.geojson` (Census TIGER/Line 2024) | Used. Junctions are road endpoints, as TIGER stores them. One-way signs are not in TIGER, so every road runs both ways. |
+| Speed limits | None in the graph | Gap. Speeds are estimates by class (freeway 60, arterial and canyon crossing 40, collector 30, local 25 mph, times 0.9 cruise, capped by the curve). Replace with posted limits when a source is verified. |
+| Stop signs, traffic signals | Hand-curated list in `scripts/routing-controls.json` (empty) | Gap. The engine adds the step and a delay (6 s stop sign, 20 s signal, estimates) when an entry sits within 30 m of a junction. Routes say so in their warnings. |
+| Grade | None | Gap. No elevation is in the graph, so difficulty ignores grade. |
+| Overpass (OSM roads, signs, speeds) | overpass-api.de, overpass.kumi.systems, overpass.osm.ch, maps.mail.ru | Unreachable on 2026-10-19: resets, HTTP 500 and 504, or an empty count for a known bbox. Not used. |
+| Geofabrik and BBBike extracts | BBBike LosAngeles.osm.pbf (214 MB) | Reachable, but its bounding box is -118.5 to -118.0 longitude, so it misses the west valleys and the canyons. Not used. |
+| Places and city centers | `src/data/places.json` | Used. Cities, towns and neighborhoods become city stops. |
+| Calabasas High School | Wikidata Q5018284, P625 claim: 34.13806, -118.6275 | Added from `scripts/routing-extra-places.json`. |
+| Canyon junction names | Derived from the crossing list in `scripts/road-classes.mjs` | Each junction of a canyon crossing with another named crossing or arterial. |
+
+Engine defaults, chosen here and stated in the code:
+- Canyon routes avoid highway-class roads (US 101, PCH, freeway ramps). A leg uses one only when nothing else connects its stops, and the route then carries a warning.
+- ETA is driving time over the graph, plus 0 to 4 s for each turn (under 45° free, under 120° 2 s, sharper 4 s), plus control delays. Turns are not part of the search, only the timing.
+- Difficulty is a 0 to 100 score per road piece: curvature (up to 50), class (up to 12), narrow road (8), unpaved (15), grade (up to 20, unused for now). Bands: easy under 15, intermediate under 30, medium under 45, hard under 60, difficult above. Colors are Minecraft chat colors: green, yellow, gold, red, dark red. A leg or route rolls up as its length-weighted mean.
+- Steps: a name change always gets a step, and a turn under 25° on a new road reads as "continue". Along one road, only turns of 45° or more get a step.
+
+Verified in tests (`npx -y tsx --test src/routing/*.test.ts`): A* matches plain Dijkstra on the built graph; Woodland Hills to Calabasas, Newbury Park to Thousand Oaks and Westlake Village to Calabasas each plan. Planning takes about 16 ms for three stops after a 33 ms graph load.
+
 ## Feed polling
 
 ## Feed polling
