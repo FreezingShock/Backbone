@@ -2,6 +2,7 @@ import type { ControlKind, LonLat, RoadClass } from './types';
 import { curvatureDegPerKm, metersBetween, polylineMeters } from './geo';
 import { encodePolyline } from './polyline';
 import { classIndex } from './roadClasses';
+import { joinRoadEnds } from './join';
 import { GRAPH_FILE_VERSION, type ControlRow, type EdgeRow, type GraphFile, type IntersectionRow, type PlaceRow } from './graphFile';
 
 /** Road features as they come from public/data/roads.geojson (Census TIGER, classed by scripts/road-classes.mjs). */
@@ -25,6 +26,8 @@ export interface BuildInput {
   source: string;
   /** Controls farther than this from any node are dropped and reported. */
   controlSnapMeters?: number;
+  /** Road ends this close to another road (or to each other) are joined. Default 12 m. */
+  joinMeters?: number;
 }
 
 export interface BuildReport {
@@ -58,9 +61,10 @@ class Table {
 }
 
 /**
- * Builds the routing graph from classed road lines. Nodes are road endpoints, which is how TIGER stores
- * intersections, plus any interior point where another road starts. Each road is cut at its nodes into pieces,
- * and each piece becomes one undirected edge. Pure: no file or network access, so it runs in tests.
+ * Builds the routing graph from classed road lines. Road ends that meet with a small gap are joined first (join.ts).
+ * Nodes are road endpoints, which is how TIGER stores intersections, plus any interior point where another road
+ * starts. Each road is cut at its nodes into pieces, and each piece becomes one undirected edge. Pure: no file or
+ * network access, so it runs in tests.
  */
 export function buildGraphFile(input: BuildInput): { file: GraphFile; report: BuildReport } {
   const controlSnapMeters = input.controlSnapMeters ?? 30;
@@ -80,6 +84,16 @@ export function buildGraphFile(input: BuildInput): { file: GraphFile; report: Bu
     if (coords.length < 2) continue;
     roads.push({ cls, highway, name: feature.properties.name ?? '', crossing: feature.properties.crossing ?? '', coords });
   }
+
+  // Join road ends that meet with a gap in the source (see join.ts). Highway lines are never a join target.
+  const joined = roads.map((road) => road.coords);
+  joinRoadEnds(joined, roads.map((road) => road.cls !== 'highway'), input.joinMeters ?? 12);
+  roads.forEach((road, i) => {
+    road.coords = joined[i];
+  });
+  const usable = roads.filter((road) => road.coords.length >= 2);
+  roads.length = 0;
+  roads.push(...usable);
 
   const endpointKeys = new Set<string>();
   for (const road of roads) {
