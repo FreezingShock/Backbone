@@ -37,19 +37,26 @@ The demo route (Layers > Canyon-only demo route) plans Newbury Park, Westlake Vi
 
 ## Routing (Canyon Cutting)
 
-Checked 2026-10-19. Built by `npm run routing:build` (scripts/build-routing-graph.ts) into `public/data/routing-graph.json` (about 1.6 MB, 17.8k junctions, 21.4k road pieces). The engine is in `src/routing/`. It runs in the browser and needs no server.
+Checked 2026-10-19. Built by `npm run routing:build` (scripts/build-routing-graph.ts) into `public/data/routing-graph.json` (about 1.9 MB, 19.7k junctions, 25.6k road pieces). The engine is in `src/routing/`. It runs in the browser and needs no server.
 
 | Input | Source | Status |
 |-------|--------|--------|
-| Road lines, names, classes | `public/data/roads.geojson` (Census TIGER/Line 2024) | Used. Junctions are road endpoints, as TIGER stores them. One-way signs are not in TIGER, so every road runs both ways. |
+| Road lines, names, classes | `public/data/roads.geojson` (Census TIGER/Line 2024) | Used. Junctions are road endpoints, as TIGER stores them, plus inner points where two differently named roads meet at an angle (TIGER sometimes shares a vertex in the middle of both lines, e.g. Ventura Blvd and Topanga Canyon Blvd). A name change along a straight road is not a junction. One-way signs are not in TIGER, so every road runs both ways. |
 | Speed limits | None in the graph | Gap. Speeds are estimates by class (freeway 60, arterial and canyon crossing 40, collector 30, local 25 mph, times 0.9 cruise, capped by the curve). Replace with posted limits when a source is verified. |
-| Stop signs, traffic signals | Hand-curated list in `scripts/routing-controls.json` (empty) | Gap. The engine adds the step and a delay (6 s stop sign, 20 s signal, estimates) when an entry sits within 30 m of a junction. Routes say so in their warnings. |
+| Stop signs, traffic signals | OpenStreetMap nodes tagged `highway=stop` and `highway=traffic_signals` (ODbL, © OpenStreetMap contributors), fetched by `npm run routing:controls` into `scripts/routing-controls.json` | Used. Checked 2026-10-19: 3,065 controls kept (2,452 stop signs, 613 signals) from 4,992 nodes in the road box. A node is kept only if it sits within 30 m of a junction, one control per junction. Delays are estimates (6 s stop sign, 20 s signal). See the notes below for known gaps. |
 | Grade | None | Gap. No elevation is in the graph, so difficulty ignores grade. |
-| Overpass (OSM roads, signs, speeds) | overpass-api.de, overpass.kumi.systems, overpass.osm.ch, maps.mail.ru | Unreachable on 2026-10-19: resets, HTTP 500 and 504, or an empty count for a known bbox. Not used. |
-| Geofabrik and BBBike extracts | BBBike LosAngeles.osm.pbf (214 MB) | Reachable, but its bounding box is -118.5 to -118.0 longitude, so it misses the west valleys and the canyons. Not used. |
+| Overpass (OSM stop signs and signals) | maps.mail.ru (used), overpass-api.de (503), overpass.kumi.systems (429, 500), overpass.osm.ch (empty answer from a stale database, osm base 117831, so not used) | Checked 2026-10-19. maps.mail.ru answered after 504 retries; the script tries mirrors in order and asks the next one when an answer is empty. OSM roads and speeds are still not used. |
+| Geofabrik and BBBike extracts | BBBike LosAngeles.osm.pbf (214 MB) | Reachable, but its bounding box is -118.5 to -118.0 longitude, so it misses the west valleys and the canyons. Not used. The Geofabrik California extract did not connect on 2026-10-19. |
 | Places and city centers | `src/data/places.json` | Used. Cities, towns and neighborhoods become city stops. |
 | Calabasas High School | Wikidata Q5018284, P625 claim: 34.13806, -118.6275 | Added from `scripts/routing-extra-places.json`. |
 | Canyon junction names | Derived from the crossing list in `scripts/road-classes.mjs` | Each junction of a canyon crossing with another named crossing or arterial. |
+
+Stop sign and signal data, checked 2026-10-19:
+- Built by `npm run routing:controls` (`scripts/fetch-routing-controls.ts`). It tiles the road box into 16 queries and caches each answer with `--cache DIR`. It uses the same junction rule as the graph build (`junctionKeys` in `src/routing/buildGraph.ts`), so every kept control lands on a graph junction. Run `npm run routing:build` after it. `--from FILE` rebuilds from a saved Overpass response.
+- Counts: 4,992 nodes read (3,934 stop, 1,058 signal). 961 are more than 30 m from any junction. 966 share a junction with a kept control, and only one control is kept per junction.
+- Junction rule change (2026-10-19): the graph used to cut roads only at endpoints. A crossing where two differently named roads share an inner vertex had no node, so signals there were dropped. Ventura Blvd and Topanga Canyon Blvd is one example, with 5 OSM signal nodes at about 34.1685, -118.6058. Nodes went from 17.8k to 19.7k and the named intersections from 279 to 399. A name change along a straight road is not a junction.
+- Known limits: (1) State Rte 27 and Topanga Canyon Blvd are two TIGER lines for the same road, so where they zigzag they can make false junctions. Some stop signs along SR 27 are labeled "State Rte 27 & Topanga Canyon Blvd" when the cross street is elsewhere. (2) Tile 1-1 (34.035 to 34.09, -118.8375 to -118.725, Malibu Creek and Las Virgenes) returned no nodes from maps.mail.ru on two tries, and the other mirrors were down, so it is unverified. (3) The tile in the southeast corner came from overpass.kumi.systems with an OSM snapshot from 2026-07-28. The source note in the file lists the snapshot time of each tile.
+- Checked by hand: the Woodland Hills to Calabasas route plans 28 control steps, Newbury Park to Thousand Oaks 23, Westlake Village to Calabasas 24, and Woodland Hills to Westlake Village 41, each with the delay in its ETA (`src/routing/controls.test.ts`). Tests cover: the file is ODbL-attributed, inside the box, and has valid kinds; the built graph holds every control on its junction; the Ventura Blvd and Topanga Canyon Blvd junction is on the graph; routes through a stop sign or a signal get a step, and the search charges the delay.
 
 Engine defaults, chosen here and stated in the code:
 - Canyon routes avoid highway-class roads (US 101, PCH, freeway ramps). A leg uses one only when nothing else connects its stops, and the route then carries a warning.
@@ -75,6 +82,7 @@ Verified in tests (`npx -y tsx --test src/routing/*.test.ts`): A* matches plain 
 - **Cesium ion Community** is free for personal, non-commercial, and evaluation use. It includes 1,000 Google Photorealistic root tiles and 1,000 Bing imagery sessions a month. Commercial starts at $149 a month for one person.
 - **Map Tiles API** bills per request on the Photorealistic 3D Tiles SKU, with a 10,000 root-tileset query daily cap. The old $200 credit note is out of date, so check current pricing first.
 - **WFIGS** asks callers not to repeat relative-date queries, which can overload it. Use fixed filters.
+- **OpenStreetMap data** (stop signs, signals) needs the ODbL attribution. It is shown in the Roads layer note.
 - **Suomi NPP** hotspot data stops in November 2026. Build on NOAA-20 and NOAA-21.
 - **Encinal Canyon Road** is a county road as far as we know. Confirm with LA County Public Works. Closures are the weak spot: no single feed covers both state highways and county roads.
 - **CAL FIRE** has no official feed found. Parsing the HTML is fragile, so keep the last good result when parsing fails.
@@ -89,4 +97,4 @@ Verified in tests (`npx -y tsx --test src/routing/*.test.ts`): A* matches plain 
 - [Caltrans emergency road closures (data.gov)](https://catalog.data.gov/dataset/caltrans-emergency-road-closures)
 - [Caltrans Lane Closure System docs](https://cwwp2.dot.ca.gov/documentation/lcs/lcs.htm)
 - [Wikidata](https://www.wikidata.org/) (CC0): place coordinates, IDs in `src/data/places.json`
-- [OpenStreetMap](https://www.openstreetmap.org/copyright) (ODbL): place coordinates. Attribution is shown in the Points of interest layer note.
+- [OpenStreetMap](https://www.openstreetmap.org/copyright) (ODbL): place coordinates, and stop sign and signal nodes for routing. Attribution is shown in the Points of interest and Roads layer notes.

@@ -10,6 +10,7 @@ import type { GraphFile } from './graphFile';
 import { findPath } from './search';
 import { planRoute, setRoutingGraph } from './planRoute';
 import { suggestStops } from './suggest';
+import { controlDelayS } from './speed';
 import type { ControlInput } from './buildGraph';
 import type { RoadClass, Stop } from './types';
 
@@ -173,7 +174,9 @@ test('A* returns the same time as a plain Dijkstra on the built Santa Monica Mou
         const ref = graph.adjacency[i];
         const edge = ref >> 1;
         const next = graph.endOf(ref);
-        const candidate = c + graph.edgeMeters[edge] / graph.edgeSpeedMs[edge];
+        // Entering a stop sign or signal costs its delay, as in the search.
+        const control = graph.controls.get(next);
+        const candidate = c + graph.edgeMeters[edge] / graph.edgeSpeedMs[edge] + (control ? controlDelayS(control.kind) : 0);
         if (candidate < cost[next]) {
           cost[next] = candidate;
           push([candidate, next]);
@@ -200,7 +203,7 @@ test('A* returns the same time as a plain Dijkstra on the built Santa Monica Mou
   }
 });
 
-test('the built graph plans the demo towns, names Calabasas High School, and warns about missing controls', () => {
+test('the built graph plans the demo towns and names Calabasas High School, with stop sign and signal data present', () => {
   const file = JSON.parse(readFileSync('public/data/routing-graph.json', 'utf8')) as GraphFile;
   setRoutingGraph(file);
   const first = (query: string) => suggestStops(query, undefined, 1)[0];
@@ -213,6 +216,6 @@ test('the built graph plans the demo towns, names Calabasas High School, and war
     assert.ok(route.distanceM > 1000, `${a} to ${b} is too short`);
     assert.ok(route.durationS > 60 && route.durationS < 3 * 3600, `${a} to ${b} time ${route.durationS}`);
     assert.ok(['easy', 'intermediate', 'medium', 'hard', 'difficult'].includes(route.difficulty));
-    assert.ok(route.warnings.some((warning) => warning.includes('Stop signs and traffic signals')));
+    assert.ok(!route.warnings.some((warning) => warning.includes('Stop signs and traffic signals')));
   }
 });

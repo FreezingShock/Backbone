@@ -57,17 +57,19 @@ class Table {
   }
 }
 
-/**
- * Builds the routing graph from classed road lines. Nodes are road endpoints, which is how TIGER stores
- * intersections, plus any interior point where another road starts. Each road is cut at its nodes into pieces,
- * and each piece becomes one undirected edge. Pure: no file or network access, so it runs in tests.
- */
-export function buildGraphFile(input: BuildInput): { file: GraphFile; report: BuildReport } {
-  const controlSnapMeters = input.controlSnapMeters ?? 30;
+/** A drivable road line after cleaning: repeated points merged, non-driving ways dropped. */
+export interface Road {
+  cls: RoadClass;
+  highway: string;
+  name: string;
+  crossing: string;
+  coords: LonLat[];
+}
 
-  type Road = { cls: RoadClass; highway: string; name: string; crossing: string; coords: LonLat[] };
+/** Road features that a car can drive, with their points rounded as the graph stores them. */
+export function drivableRoads(features: SourceRoad[]): Road[] {
   const roads: Road[] = [];
-  for (const feature of input.roads) {
+  for (const feature of features) {
     const cls = feature.properties.class;
     const highway = feature.properties.highway ?? '';
     if (!cls || NON_DRIVABLE.has(highway)) continue;
@@ -80,12 +82,86 @@ export function buildGraphFile(input: BuildInput): { file: GraphFile; report: Bu
     if (coords.length < 2) continue;
     roads.push({ cls, highway, name: feature.properties.name ?? '', crossing: feature.properties.crossing ?? '', coords });
   }
+  return roads;
+}
 
-  const endpointKeys = new Set<string>();
+/** Compass bearing of a segment in degrees, 0 = north, 90 = east. Good enough for a few metres. */
+function bearingOf(from: LonLat, to: LonLat): number {
+  const dx = (to[0] - from[0]) * Math.cos((from[1] * Math.PI) / 180);
+  const dy = to[1] - from[1];
+  return ((Math.atan2(dx, dy) * 180) / Math.PI + 360) % 360;
+}
+
+/** The angle between two directions of travel through a point, folded to 0..90 degrees. Straight on is 0. */
+function crossingAngle(a: number, b: number): number {
+  const diff = Math.abs(a - b) % 360;
+  const between = Math.min(diff, 360 - diff);
+  return Math.min(between, 180 - between);
+}
+
+/** A junction of the drivable roads, with the pairs of road names that cross or meet there. */
+export interface Junction {
+  /** Names of the named roads that have a point here. */
+  names: Set<string>;
+  /** Pairs of names whose lines meet at an angle here, e.g. a cross street and the road it meets. */
+  crossings: [string, string][];
+}
+
+/**
+ * The junctions of the drivable roads: the points where routing nodes sit. These are road endpoints, which is how
+ * TIGER stores most intersections, plus each inner point where two differently named roads meet at an angle. Some
+ * TIGER crossings are a shared vertex in the middle of both lines, with no line ending there. A name change along
+ * one straight road is not a junction, and neither is a repeated copy of the same road.
+ */
+export function junctionKeys(roads: Road[]): Map<string, Junction> {
+  const ends = new Set<string>();
+  // Per point: the roads through it, with their directions of travel away from the point.
+  const through = new Map<string, { name: string; bearings: number[] }[]>();
   for (const road of roads) {
-    endpointKeys.add(coordKey(road.coords[0]));
-    endpointKeys.add(coordKey(road.coords[road.coords.length - 1]));
+    const last = road.coords.length - 1;
+    road.coords.forEach((point, i) => {
+      const key = coordKey(point);
+      if (i === 0 || i === last) ends.add(key);
+      if (!road.name) return;
+      const bearings: number[] = [];
+      if (i > 0) bearings.push(bearingOf(point, road.coords[i - 1]));
+      if (i < last) bearings.push(bearingOf(point, road.coords[i + 1]));
+      let list = through.get(key);
+      if (!list) through.set(key, (list = []));
+      list.push({ name: road.name, bearings });
+    });
   }
+  const junctions = new Map<string, Junction>();
+  for (const [key, list] of through) {
+    const names = new Set(list.map((entry) => entry.name));
+    const crossings: [string, string][] = [];
+    for (let i = 0; i < list.length; i++) {
+      for (let k = i + 1; k < list.length; k++) {
+        const a = list[i];
+        const b = list[k];
+        if (a.name === b.name) continue;
+        const meet = a.bearings.some((x) => b.bearings.some((y) => crossingAngle(x, y) >= 30));
+        if (!meet) continue;
+        const pair: [string, string] = a.name < b.name ? [a.name, b.name] : [b.name, a.name];
+        if (!crossings.some((c) => c[0] === pair[0] && c[1] === pair[1])) crossings.push(pair);
+      }
+    }
+    if (ends.has(key) || crossings.length > 0) junctions.set(key, { names, crossings });
+  }
+  for (const key of ends) if (!junctions.has(key)) junctions.set(key, { names: new Set(), crossings: [] });
+  return junctions;
+}
+
+/**
+ * Builds the routing graph from classed road lines. Nodes are road endpoints, which is how TIGER stores
+ * intersections, plus any interior point where another road starts. Each road is cut at its nodes into pieces,
+ * and each piece becomes one undirected edge. Pure: no file or network access, so it runs in tests.
+ */
+export function buildGraphFile(input: BuildInput): { file: GraphFile; report: BuildReport } {
+  const controlSnapMeters = input.controlSnapMeters ?? 30;
+
+  const roads = drivableRoads(input.roads);
+  const endpointKeys = junctionKeys(roads);
 
   const nodeIndex = new Map<string, number>();
   const nodePoints: LonLat[] = [];
