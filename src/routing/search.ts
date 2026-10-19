@@ -5,7 +5,7 @@ import { controlDelayS, MAX_SPEED_MS } from './speed';
 export interface PathResult {
   /** Adjacency refs from start to goal, each one a directed edge (see RoutingGraph). */
   refs: number[];
-  /** Search cost in seconds: driving time plus control delays. Turn delays are added later, per step. */
+  /** Search cost in seconds: weighted driving time, plus control delays when they are on. Turn delays are added later, per step. */
   seconds: number;
   meters: number;
 }
@@ -66,6 +66,8 @@ class MinHeap {
  * multiplies each edge's drive time (default 1), which is how canyon roads are preferred and freeways priced. Every
  * weight must be at least 0.8, so the heuristic (straight-line distance at the fastest speed the graph allows)
  * still never overestimates, and the first path found to the goal is the cheapest.
+ * `controlDelays` adds the stop sign and signal delays to the cost. Route choice turns them off, so a stop sign
+ * never sends a canyon route onto a freeway. The planner still adds the delays to each leg's time.
  */
 export function findPath(
   graph: RoutingGraph,
@@ -73,6 +75,7 @@ export function findPath(
   goal: number,
   allow: (edge: number) => boolean,
   weights?: Float64Array,
+  controlDelays = true,
 ): PathResult | null {
   if (start === goal) return { refs: [], seconds: 0, meters: 0 };
 
@@ -100,7 +103,7 @@ export function findPath(
       if (!allow(edge)) continue;
       const next = graph.endOf(ref);
       const pieceSeconds = (graph.edgeMeters[edge] / graph.edgeSpeedMs[edge]) * (weights ? weights[edge] : 1);
-      const delay = graph.controls.get(next);
+      const delay = controlDelays ? graph.controls.get(next) : undefined;
       const candidate = g + pieceSeconds + (delay ? controlDelayS(delay.kind) : 0);
       if (candidate < cost[next]) {
         cost[next] = candidate;

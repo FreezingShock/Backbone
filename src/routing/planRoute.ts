@@ -129,7 +129,8 @@ function solve(graph: RoutingGraph, stops: Stop[], nodes: number[], stopWarnings
   for (let i = 1; i < stops.length; i++) {
     const from = stops[i - 1];
     const to = stops[i];
-    const path = findPath(graph, nodes[i - 1], nodes[i], () => true, weights);
+    // Route choice ignores stop and signal delays; the leg's time adds them below.
+    const path = findPath(graph, nodes[i - 1], nodes[i], () => true, weights, false);
     if (!path) throw new Error(`No road route from ${from.name} to ${to.name}`);
     for (const ref of path.refs) {
       const edge = ref >> 1;
