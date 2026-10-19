@@ -15,17 +15,18 @@ import { SavedRoutes } from './SavedRoutes';
 import { StopList } from './StopList';
 import { StopSearch } from './StopSearch';
 import { useRoutePlan } from './useRoutePlan';
-import { playPlannedRoute } from './playback';
 import type { Network, Route, Stop } from './types';
 
 export interface RoutePlannerProps {
   viewer: Cesium.Viewer | null;
   look: MapLook;
+  /** Hands the planned route to playback. */
+  onPlay: (route: Route) => void;
 }
 
 const NETWORK_LABEL: Record<Network, string> = { canyons: 'Canyon roads', all: 'All roads' };
 
-export function RoutePlanner({ viewer, look }: RoutePlannerProps) {
+export function RoutePlanner({ viewer, look, onPlay }: RoutePlannerProps) {
   const [open, setOpen] = useState(false);
   const [pickMode, setPickMode] = useState(false);
   const [plan, dispatch] = useReducer(planReducer, INITIAL_PLAN);
@@ -204,9 +205,7 @@ export function RoutePlanner({ viewer, look }: RoutePlannerProps) {
             <button
               type="button"
               disabled={!canPlay}
-              onClick={() => {
-                if (route && !playPlannedRoute(route)) setNotice('Playback is not connected yet.');
-              }}
+              onClick={() => route && onPlay(route)}
               className="cursor-pointer rounded-[2px] border border-accent bg-accent px-4 py-1.5 font-mono text-[12px] tracking-wider text-paper uppercase transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
             >
               Play

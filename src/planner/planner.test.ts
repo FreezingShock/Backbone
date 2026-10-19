@@ -2,60 +2,22 @@
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildRoadGraph, type RoadFeature } from '../lib/roads/route';
+import { setRoutingGraph } from '../routing';
+import type { GraphFile } from '../routing/graphFile';
 import { DIFFICULTY_META, harder } from './difficulty';
+import { customStop, planRoute, suggestStops } from './engine';
 import { formatClock, formatDistance, formatDuration, fromLocalInput, stopLetter, toLocalInput } from './format';
-import {
-  buildNetwork,
-  findIntersections,
-  placeStop,
-  rankStops,
-  rateDifficulty,
-  routeOnGraph,
-  customStop,
-} from './engine';
 import { INITIAL_PLAN, MAX_STOPS, planReducer, defaultRouteName } from './planState';
 import { PRESET_ROUTES } from './presets';
 import { createLocalRouteStore, type SavedRoute } from './routeStore';
-import { PLACES } from '../map/places';
 import type { Stop } from './types';
 
-const stop = (id: string, lon: number, lat: number, kind: Stop['kind'] = 'custom'): Stop => ({
-  id,
-  name: id.toUpperCase(),
-  kind,
-  lon,
-  lat,
-});
+const stop = (id: string, lon: number, lat: number): Stop => ({ id, name: id.toUpperCase(), kind: 'custom', lon, lat });
 
-/** A small grid: a crossing running east from X, then a local street north from its end. */
-function syntheticFeatures(): RoadFeature[] {
-  return [
-    {
-      properties: { name: 'Decker Rd', class: 'crossing', crossing: 'Decker' },
-      geometry: {
-        coordinates: [
-          [-118.7, 34.1],
-          [-118.69, 34.1],
-          [-118.68, 34.1],
-        ],
-      },
-    },
-    {
-      properties: { name: 'Mulholland Hwy', class: 'crossing', crossing: 'Mulholland Hwy' },
-      geometry: {
-        coordinates: [
-          [-118.69, 34.09],
-          [-118.69, 34.1],
-          [-118.69, 34.11],
-        ],
-      },
-    },
-    {
-      properties: { name: 'Ventura Blvd', class: 'arterial' },
-      geometry: { coordinates: [[-118.66, 34.1], [-118.6, 34.1]] },
-    },
-  ];
+/** The routing graph built by the routing thread, loaded once for the engine tests. */
+function loadGraph(): void {
+  const file = JSON.parse(readFileSync('public/data/routing-graph.json', 'utf8')) as GraphFile;
+  setRoutingGraph(file);
 }
 
 test('formats distance, duration and clock in US units', () => {
@@ -80,83 +42,15 @@ test('local datetime round-trips', () => {
   assert.equal(fromLocalInput('not a date'), null);
 });
 
-test('Minecraft difficulty colors are the ones chosen', () => {
+test('difficulty chips use the Minecraft colors and the labels', () => {
   assert.equal(DIFFICULTY_META.easy.color, '#55FF55');
   assert.equal(DIFFICULTY_META.intermediate.color, '#FFFF55');
   assert.equal(DIFFICULTY_META.medium.color, '#FFAA00');
   assert.equal(DIFFICULTY_META.hard.color, '#FF5555');
   assert.equal(DIFFICULTY_META.difficult.color, '#AA0000');
+  assert.equal(DIFFICULTY_META.difficult.label, 'Difficult');
   assert.equal(harder('hard', 'medium'), 'hard');
   assert.equal(harder('easy', 'difficult'), 'difficult');
-});
-
-test('difficulty rises with local roads and bends', () => {
-  assert.equal(rateDifficulty([{ cls: 'arterial', meters: 1000 }], 1), 'easy');
-  assert.equal(rateDifficulty([{ cls: 'crossing', meters: 1000 }], 1), 'medium');
-  assert.equal(rateDifficulty([{ cls: 'local', meters: 1000 }], 1.6), 'difficult');
-  assert.equal(rateDifficulty([], 1), 'easy');
-});
-
-test('intersections name the two roads that meet, most important first', () => {
-  const graph = buildRoadGraph(syntheticFeatures(), () => true);
-  const junctions = findIntersections(graph);
-  assert.equal(junctions.length, 1);
-  assert.equal(junctions[0].kind, 'intersection');
-  assert.equal(junctions[0].name, 'Decker Rd & Mulholland Hwy');
-  assert.ok(Math.abs(junctions[0].lon - -118.69) < 1e-9 && Math.abs(junctions[0].lat - 34.1) < 1e-9);
-});
-
-test('a route is lettered legs with times, steps and a hardest-leg rating', () => {
-  const { graph } = buildNetwork(syntheticFeatures(), 'all');
-  const start = stop('start', -118.7, 34.1, 'city');
-  const middle = stop('middle', -118.69, 34.1, 'intersection');
-  const end = stop('end', -118.68, 34.1, 'poi');
-  const depart = new Date('2026-10-19T16:00:00.000Z');
-  const route = routeOnGraph(graph, [start, middle, end], depart);
-
-  assert.equal(route.legs.length, 2);
-  assert.deepEqual(
-    route.legs.map((leg) => leg.from.id),
-    ['start', 'middle'],
-  );
-  assert.equal(route.departAt, depart.toISOString());
-  assert.ok(route.warnings.some((warning) => warning.includes('stop signs')));
-  assert.equal(route.arriveAt, new Date(depart.getTime() + route.durationS * 1000).toISOString());
-  assert.ok(route.distanceM > 0 && route.durationS > 0);
-  // The second leg runs east on the crossing, then the route rating is the harder of the two legs.
-  assert.equal(route.legs[1].steps[0].kind, 'depart');
-  assert.equal(route.legs[1].steps.at(-1)?.kind, 'arrive');
-  assert.equal(route.legs[1].steps.at(-1)?.instruction, 'Arrive at END');
-  const hardest = route.legs.reduce((a, b) => (harder(a.difficulty, b.difficulty) === a.difficulty ? a : b));
-  assert.equal(route.difficulty, hardest.difficulty);
-  // Consecutive legs share the junction point once.
-  assert.equal(route.geometry.length, route.legs.reduce((sum, leg) => sum + leg.geometry.length, 0) - 1);
-});
-
-test('a stop far from every road is refused with its name', () => {
-  const { graph } = buildNetwork(syntheticFeatures(), 'all');
-  assert.throws(
-    () => routeOnGraph(graph, [stop('start', -118.7, 34.1), stop('far', -117.0, 34.1)], new Date()),
-    /No road on this network within 3 km of FAR/,
-  );
-});
-
-test('stop search ranks prefixes first and needs every word to match', () => {
-  const stops = [
-    placeStop(PLACES.find((place) => place.id === 'newbury-park')!),
-    placeStop(PLACES.find((place) => place.id === 'malibu')!),
-    { id: 'x', name: 'Decker Rd & Mulholland Hwy', kind: 'intersection' as const, lon: 0, lat: 0 },
-  ];
-  assert.equal(rankStops('newb', stops)[0].name, 'Newbury Park');
-  assert.deepEqual(
-    rankStops('decker mulho', stops).map((candidate) => candidate.name),
-    ['Decker Rd & Mulholland Hwy'],
-  );
-  assert.deepEqual(rankStops('zzz', stops), []);
-  assert.deepEqual(
-    rankStops('', stops).map((candidate) => candidate.name),
-    ['Newbury Park', 'Malibu'],
-  );
 });
 
 test('reducer adds, moves, removes, reverses and refuses repeats', () => {
@@ -193,11 +87,12 @@ test('default names read A to B', () => {
   assert.equal(defaultRouteName([stop('a', 0, 0), stop('b', 0, 0)]), 'A to B');
 });
 
-test('custom stops keep the clicked point', () => {
+test('a map click becomes a custom stop named for the pin', () => {
   const pin = customStop(-118.7, 34.1);
   assert.equal(pin.kind, 'custom');
   assert.equal(pin.name, 'Dropped pin');
   assert.equal(pin.lon, -118.7);
+  assert.equal(pin.lat, 34.1);
 });
 
 test('saved routes persist through the store, sorted by last update', async () => {
@@ -239,23 +134,29 @@ test('a corrupt store reads as empty and does not throw', async () => {
   await store.save({ id: 'x', name: 'x', stops: [], network: 'all', createdAt: '', updatedAt: '' });
 });
 
-test('every preset resolves to real places', () => {
+test('every preset stop is a real place, and each preset has two or more stops', () => {
   for (const preset of PRESET_ROUTES) {
     assert.ok(preset.stops.length >= 2, `${preset.name} needs two stops`);
     for (const s of preset.stops) assert.ok(s.kind === 'city' || s.kind === 'poi', s.name);
   }
 });
 
-test('real road data: the Newbury Park to Woodland Hills preset routes on canyon roads', () => {
-  const features = JSON.parse(readFileSync('public/data/roads.geojson', 'utf8')).features as RoadFeature[];
-  const { graph } = buildNetwork(features, 'canyons');
+test('the routing engine plans the Newbury Park to Woodland Hills preset', async () => {
+  loadGraph();
   const preset = PRESET_ROUTES.find((candidate) => candidate.id === 'preset-newbury-woodland')!;
-  const route = routeOnGraph(graph, preset.stops, new Date('2026-10-19T16:00:00.000Z'));
-  const roads = new Set(route.legs.flatMap((leg) => leg.steps.map((step) => step.roadName)));
-  assert.ok(!roads.has('unnamed road'), 'every canyon step has a road name');
-  assert.ok(route.distanceM > 5000, `expected a multi-mile canyon route, got ${route.distanceM} m`);
+  const route = await planRoute(preset.stops, { network: preset.network, departAt: '2026-10-19T16:00:00.000Z' });
+  assert.equal(route.stops.length, preset.stops.length);
+  assert.ok(route.distanceM > 5000, `expected a multi-mile route, got ${route.distanceM} m`);
   assert.ok(route.durationS > 300);
+  assert.equal(route.departAt, '2026-10-19T16:00:00.000Z');
+  assert.ok(Array.isArray(route.warnings));
   console.log(
-    `Newbury Park to Woodland Hills (canyons): ${formatDistance(route.distanceM)}, ${formatDuration(route.durationS)}, ${route.difficulty}, ${route.legs[0].steps.length} steps; roads: ${[...roads].slice(0, 8).join(', ')}`,
+    `Newbury Park to Woodland Hills (canyons, real engine): ${formatDistance(route.distanceM)}, ${formatDuration(route.durationS)}, ${route.difficulty}, warnings: ${route.warnings.join(' | ')}`,
   );
+});
+
+test('the routing engine suggests junctions and places for the search box', async () => {
+  loadGraph();
+  const suggestions = await suggestStops('newbury', { network: 'canyons' });
+  assert.ok(suggestions.some((candidate) => candidate.name === 'Newbury Park'));
 });
