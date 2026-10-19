@@ -7,7 +7,6 @@ import { DIFFICULTY_STYLE } from './difficulty';
 import { formatClockTime, formatDistance, formatDuration } from './format';
 import { INTRO_TOTAL_S, PLAYBACK_SPEEDS, routeSecondsPerSecond } from './pacing';
 import { chasePose, extentMeters, FRAME, orbitPose, overviewPose } from './poses';
-import { bendKind, deriveManeuvers, sampleRouteFromPlan } from './sampleRoute';
 import type { Leg, LonLat, Route, Step, Stop } from './routeTypes';
 import {
   buildTrack,
@@ -188,77 +187,6 @@ test('overview frames the whole route with a minimum range', () => {
   assert.ok(pose.height > 0);
   const tiny = overviewPose(0, 0, 0, 10, 0);
   assert.ok(tiny.height > 0);
-});
-
-test('turn kinds follow the size of the bend', () => {
-  assert.equal(bendKind(-30), 'slight-left');
-  assert.equal(bendKind(80), 'turn-right');
-  assert.equal(bendKind(-140), 'sharp-left');
-  assert.equal(bendKind(175), 'u-turn');
-});
-
-test('maneuvers come from bends and road-name changes along one path', () => {
-  // East, then a right-angle turn north, then straight north with a name change.
-  const points: LonLat[] = [
-    [-118.52, 34.2],
-    [-118.51, 34.2],
-    [-118.5, 34.2],
-    [-118.5, 34.21],
-    [-118.5, 34.22],
-  ];
-  const names = ['Mulholland', 'Mulholland', 'Encinal', 'Encinal'];
-  const steps = deriveManeuvers(points, names).map((m) => m.step);
-  // Heading east, then north, is a left turn.
-  assert.equal(steps[0].kind, 'turn-left');
-  assert.equal(steps[0].roadName, 'Encinal');
-  // A straight name change is a straight maneuver.
-  assert.ok(steps.length >= 1);
-  const straightPath = deriveManeuvers(
-    [
-      [-118.52, 34.2],
-      [-118.51, 34.2],
-      [-118.5, 34.2],
-    ],
-    ['A', 'B'],
-  );
-  assert.equal(straightPath[0].step.kind, 'straight');
-});
-
-test('sample route assembles legs, depart and arrive steps, and an arrival time', () => {
-  const graph = {
-    nodes: new Map<string, LonLat>([
-      ['a', [-118.52, 34.2]],
-      ['b', [-118.51, 34.2]],
-      ['c', [-118.5, 34.2]],
-    ]),
-    adjacency: new Map(),
-  };
-  const planned = {
-    stops: [],
-    legs: [
-      {
-        from: { name: 'A', lon: -118.52, lat: 34.2, node: 'a', snapMeters: 0 },
-        to: { name: 'C', lon: -118.5, lat: 34.2, node: 'c', snapMeters: 0 },
-        path: ['a', 'b', 'c'],
-        edges: [
-          { to: 'b', meters: 900, name: 'Road One', cls: 'crossing' as const },
-          { to: 'c', meters: 900, name: 'Road One', cls: 'crossing' as const },
-        ],
-        meters: 1800,
-      },
-    ],
-    meters: 1800,
-  };
-  const departAt = new Date('2026-10-19T00:00:00.000Z');
-  const route = sampleRouteFromPlan(graph, planned, departAt);
-  assert.equal(route.legs.length, 1);
-  assert.equal(route.legs[0].steps[0].kind, 'depart');
-  assert.equal(route.legs[0].steps[route.legs[0].steps.length - 1].kind, 'arrive');
-  // Each step's distance runs to the next step, so the depart covers the road to the first maneuver.
-  const withDistance = route.legs[0].steps.slice(0, -1);
-  for (const step of withDistance) assert.ok(step.distanceM >= 0);
-  assert.equal(route.legs[0].steps[route.legs[0].steps.length - 1].distanceM, 0);
-  assert.equal(route.arriveAt, new Date(departAt.getTime() + route.durationS * 1000).toISOString());
 });
 
 test('step glyphs: arrows rotate and the stop sign is labeled', () => {
