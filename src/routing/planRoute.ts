@@ -292,7 +292,8 @@ function sharedFraction(graph: RoutingGraph, a: Solved, b: Solved): number {
 /** Cheapest path for every leg under the given weights. Throws when a leg cannot be joined at all. */
 function legPaths(graph: RoutingGraph, stops: Stop[], nodes: number[], weights: Float64Array): number[][] {
   return stops.slice(1).map((stop, i) => {
-    const path = findPath(graph, nodes[i], nodes[i + 1], () => true, weights);
+    // Route choice ignores stop and signal delays; the leg's time adds them in solve().
+    const path = findPath(graph, nodes[i], nodes[i + 1], () => true, weights, false);
     if (!path) throw new Error(`No road route from ${stops[i].name} to ${stop.name}`);
     return path.refs;
   });

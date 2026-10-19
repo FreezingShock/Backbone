@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
     "postinstall": "node scripts/copy-cesium.mjs",
+    "routing:controls": "npx -y tsx scripts/fetch-routing-controls.ts",
     "routing:build": "npx -y tsx scripts/build-routing-graph.ts",
     "routing:elevation": "npx -y tsx scripts/fetch-elevation.ts"
   },

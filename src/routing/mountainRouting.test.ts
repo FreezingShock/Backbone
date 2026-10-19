@@ -128,9 +128,10 @@ for (const [a, b] of TRIPS) {
     assert.ok(routes.length >= 1, `${a} to ${b} has no route`);
     const top = routes[0];
     assert.equal(top.alternative, 0);
-    // Thousand Oaks sits on the 23 and the 101. Calabasas to Thousand Oaks needs about 4.5 km of State Route 23 at the
-    // end, the only link the graph has, so the freeway share is short rather than zero for that trip (it carries a warning).
-    assert.ok((top.highwayShare ?? 0) <= 0.1, `top route is ${(top.highwayShare ?? 0).toFixed(2)} freeway`);
+    // Thousand Oaks sits on the 23 and the 101. Calabasas to Thousand Oaks needs about 4.5 km of State Route 23 (a share
+    // of about 0.10 of a 45 km route), the only link the graph has, so the freeway share is short rather than zero for that
+    // trip (it carries a warning).
+    assert.ok((top.highwayShare ?? 0) <= 0.11, `top route is ${(top.highwayShare ?? 0).toFixed(3)} freeway`);
     assert.ok((top.mountainShare ?? 0) >= 0.5, `top route is ${(top.mountainShare ?? 0).toFixed(2)} mountain`);
     assert.ok(metersOn(top, VALLEY_ARTERIAL) <= 5000, `top route runs ${metersOn(top, VALLEY_ARTERIAL)} m on Thousand Oaks or Ventura Blvd`);
     assert.ok(top.summary && top.summary.startsWith('via '), `summary is "${top.summary}"`);

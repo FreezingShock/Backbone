@@ -187,7 +187,7 @@ export const roadsLayer: MapLayer = {
   group: 'Roads',
   defaultVisible: true,
   legend: ROAD_LEGEND,
-  note: 'Roads: U.S. Census TIGER/Line 2024 (public domain). Trails are not in this source. Canyon crossings are named by hand.',
+  note: 'Roads: U.S. Census TIGER/Line 2024 (public domain). Stop signs and traffic signals: OpenStreetMap contributors (ODbL). Trails are not in this source. Canyon crossings are named by hand.',
   mount(viewer, initialLook): LayerHandle {
     const sets: RoadSet[] = [];
     const labels = new Cesium.LabelCollection({ scene: viewer.scene });
