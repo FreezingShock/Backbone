@@ -5,3 +5,6 @@ dist
 *.log
 .DS_Store
 public/cesium
+
+# Licensed font files (not open source). Keep them local, never commit.
+src/fonts/anthropic-serif/

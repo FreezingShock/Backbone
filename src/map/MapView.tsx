@@ -32,7 +32,7 @@ export interface MapViewProps {
   onViewer: (viewer: Cesium.Viewer | null) => void;
 }
 
-const LABEL_FONTS = ['17px "IM Fell English"', '12px "IBM Plex Mono"'];
+const LABEL_FONTS = ['17px "IM Fell English"', '17px "Anthropic Serif"', '12px "IBM Plex Mono"'];
 
 export function MapView({
   layers,
