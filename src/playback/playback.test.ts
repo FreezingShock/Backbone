@@ -5,8 +5,9 @@ import assert from 'node:assert/strict';
 import { glyphSvg, isArrowKind, stepRotation } from './icons';
 import { DIFFICULTY_STYLE } from './difficulty';
 import { formatClockTime, formatDistance, formatDuration } from './format';
-import { INTRO_TOTAL_S, PLAYBACK_SPEEDS, routeSecondsPerSecond } from './pacing';
-import { chasePose, extentMeters, FRAME, orbitPose, overviewPose } from './poses';
+import { INTRO, INTRO_TOTAL_S, PLAYBACK_SPEEDS, routeSecondsPerSecond } from './pacing';
+import { openingPose } from './opening';
+import { chasePose, extentMeters, FRAME, orbitPose, overviewPose, type Pose } from './poses';
 import type { Leg, LonLat, Route, Step, Stop } from './routeTypes';
 import {
   buildTrack,
@@ -18,6 +19,7 @@ import {
   placeSteps,
   sampleAtDistance,
   slice,
+  upcomingSteps,
   wrapAngle,
   type TrackSample,
 } from './track';
@@ -216,4 +218,60 @@ test('formatting: distances in feet then miles, durations, and playback clock', 
   assert.equal(formatDuration(2 * 3600), '2 h');
   assert.equal(formatClockTime(65), '1:05');
   assert.equal(formatClockTime(3725), '1:02:05');
+});
+
+test('upcoming steps list the next ones after the marker, stop signs and signals included, with distances', () => {
+  const step = (kind: Step['kind'], lon: number): Step => ({
+    kind,
+    roadName: 'Lynn',
+    lon,
+    lat: 34,
+    distanceM: 0,
+    durationS: 0,
+    instruction: kind,
+  });
+  const placed = [
+    { step: step('depart', -118.6), meters: 0, seconds: 0 },
+    { step: step('stop-sign', -118.61), meters: 100, seconds: 10 },
+    { step: step('traffic-signal', -118.62), meters: 200, seconds: 20 },
+    { step: step('turn-left', -118.63), meters: 300, seconds: 30 },
+    { step: step('arrive', -118.64), meters: 400, seconds: 40 },
+  ];
+  const index = currentStepIndex(placed, 150);
+  assert.equal(index, 1);
+  const upcoming = upcomingSteps(placed, index, 150, 2);
+  assert.deepEqual(
+    upcoming.map((item) => [item.step.kind, Math.round(item.meters)]),
+    [
+      ['traffic-signal', 50],
+      ['turn-left', 150],
+    ],
+  );
+  // Past the last step the list is empty.
+  assert.deepEqual(upcomingSteps(placed, currentStepIndex(placed, 450), 450, 4), []);
+});
+
+test('opening shot: overview, then an approach behind the start, then it settles on the follow camera at the start', () => {
+  const from: Pose = { lon: -118.3, lat: 34.0, height: 12000, heading: 0, pitch: -1.2 };
+  const overview: Pose = { lon: -118.4, lat: 34.1, height: 9000, heading: 0.4, pitch: -0.95 };
+  const approach: Pose = { lon: -118.65, lat: 34.13, height: 400, heading: 0.4, pitch: -0.62 };
+  const follow: Pose = { lon: -118.651, lat: 34.1325, height: 180, heading: 0.4, pitch: -0.5 };
+  const poses = { from, overview, approach, follow };
+
+  near(openingPose(0, poses).lon, from.lon, 1e-9);
+  near(openingPose(0, poses).height, from.height, 1e-9);
+  const end = openingPose(INTRO_TOTAL_S, poses);
+  near(end.lon, follow.lon, 1e-9);
+  near(end.lat, follow.lat, 1e-9);
+  near(end.height, follow.height, 1e-9);
+  near(end.heading, follow.heading, 1e-9);
+  near(end.pitch, follow.pitch, 1e-9);
+
+  // After the overview, the camera never leaves the box between the overview and the start. It does not fly back
+  // across the route to the start, which is the bug the old dive had.
+  for (let t = INTRO.overviewS; t <= INTRO_TOTAL_S; t += 0.05) {
+    const p = openingPose(t, poses);
+    assert.ok(p.lon <= overview.lon + 1e-9 && p.lon >= follow.lon - 1e-9, `lon ${p.lon} at ${t}s`);
+    assert.ok(p.lat >= overview.lat - 1e-9 && p.lat <= follow.lat + 1e-9, `lat ${p.lat} at ${t}s`);
+  }
 });

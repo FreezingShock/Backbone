@@ -4,8 +4,9 @@
 import * as Cesium from 'cesium';
 import type { MapLook } from '../map/look';
 import { glyphDataUrl, stepTitle } from './icons';
-import { INTRO, INTRO_TOTAL_S, routeSecondsPerSecond, smoothstep, type PlaybackSpeed } from './pacing';
-import { blendPose, chasePose, extentMeters, FRAME, orbitPose, overviewPose, sweepPose, type Pose } from './poses';
+import { INTRO_TOTAL_S, routeSecondsPerSecond, type PlaybackSpeed } from './pacing';
+import { openingPose } from './opening';
+import { chasePose, extentMeters, FRAME, orbitPose, overviewPose, sweepPose, type Pose } from './poses';
 import type { Difficulty, Route, Step } from './routeTypes';
 import {
   buildTrack,
@@ -15,6 +16,7 @@ import {
   sampleAtDistance,
   slice,
   lerpAngle,
+  upcomingSteps,
   type PlacedStep,
   type Track,
   type TrackSample,
@@ -49,7 +51,10 @@ export interface PlaybackSnapshot {
   roadName: string;
   /** Difficulty of the leg under the marker. */
   difficulty: Difficulty | null;
+  /** The next maneuver, stop sign or traffic signal. Same as the first entry of `upcoming`. */
   next: NextManeuver | null;
+  /** The next few maneuvers, stop signs and signals included, in order of travel. */
+  upcoming: NextManeuver[];
 }
 
 export interface PlaybackController {
@@ -84,10 +89,10 @@ const GROUND_SAMPLE_S = 0.1;
 const HEADING_TIME_S = 0.35;
 /** Longest real time one frame may advance. Keeps a stalled tab from jumping the route. */
 const MAX_FRAME_S = 0.1;
-/** Share of the sweep spent blending from the overview. */
-const SWEEP_BLEND = 0.25;
-/** Upcoming callouts shown at once. */
+/** Upcoming callouts shown on the map at once. */
 const CALLOUTS_AHEAD = 3;
+/** Upcoming maneuvers listed in the navigation panel at once. */
+const UPCOMING_COUNT = 4;
 const HIGHLIGHT_WIDTH = 9;
 const MARKER_PIXELS = 12;
 
@@ -105,6 +110,7 @@ export const IDLE_SNAPSHOT: PlaybackSnapshot = {
   roadName: '',
   difficulty: null,
   next: null,
+  upcoming: [],
 };
 
 // Reused across frames so the loop does not allocate for positions or the camera view.
@@ -190,22 +196,12 @@ export function createPlaybackController(viewer: Cesium.Viewer, initialLook: Map
       : chasePose(sample.lon, sample.lat, ground, chaseHeading);
   };
 
-  /** The opening shot: overview, then a sweep down the route, then a dive into the follow camera at the start. */
+  /** The opening shot: overview, an approach behind the start, then a settle into the follow camera at the start. */
   const introPose = (elapsed: number): Pose => {
-    if (elapsed < INTRO.overviewS) {
-      return blendPose(introFrom!, overview!, smoothstep(elapsed / INTRO.overviewS));
-    }
-    if (elapsed < INTRO.overviewS + INTRO.sweepS) {
-      const u = (elapsed - INTRO.overviewS) / INTRO.sweepS;
-      const sample = trackAt(u * track!.totalM);
-      const sweep = sweepPose(sample.lon, sample.lat, sampleGround(sample.lon, sample.lat, groundHeight), sample.heading);
-      return blendPose(overview!, sweep, smoothstep(Math.min(1, u / SWEEP_BLEND)));
-    }
-    // The sample is a shared scratch object, so read it before followPose() overwrites it.
-    const last = trackAt(track!.totalM);
-    const sweepEnd = sweepPose(last.lon, last.lat, sampleGround(last.lon, last.lat, groundHeight), last.heading);
-    const u = (elapsed - INTRO.overviewS - INTRO.sweepS) / INTRO.diveS;
-    return blendPose(sweepEnd, followPose(0), smoothstep(u));
+    // The track sample is a shared scratch object, so read the start before followPose() overwrites it.
+    const start = trackAt(0);
+    const approach = sweepPose(start.lon, start.lat, sampleGround(start.lon, start.lat, groundHeight), start.heading);
+    return openingPose(elapsed, { from: introFrom!, overview: overview!, approach, follow: followPose(0) });
   };
 
   // Markers ------------------------------------------------------------------
@@ -338,9 +334,9 @@ export function createPlaybackController(viewer: Cesium.Viewer, initialLook: Map
     if (!route || !track) return IDLE_SNAPSHOT;
     const meters = currentMeters();
     const index = currentStepIndex(placed, meters);
-    const next = placed[index + 1];
     const leg = route.legs.length > 0 ? route.legs[Math.max(0, legAt(seconds))] : undefined;
     const roadName = index >= 0 ? placed[index].step.roadName : (placed[0]?.step.roadName ?? '');
+    const upcoming = upcomingSteps(placed, index, meters, UPCOMING_COUNT);
     return {
       phase,
       camera: cameraMode,
@@ -354,7 +350,8 @@ export function createPlaybackController(viewer: Cesium.Viewer, initialLook: Map
       progress: track.totalS > 0 ? Math.min(seconds / track.totalS, 1) : 0,
       roadName,
       difficulty: leg?.difficulty ?? route.difficulty,
-      next: next ? { step: next.step, meters: Math.max(next.meters - meters, 0) } : null,
+      next: upcoming[0] ?? null,
+      upcoming,
     };
   };
 

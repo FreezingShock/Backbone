@@ -6,10 +6,10 @@ import { glyphMarkup, isArrowKind, stepRotation, stepTitle } from './icons';
 import type { StepKind } from './routeTypes';
 
 /** Turn arrow in the HUD. Same art as the map markers, drawn in the theme's own colors. */
-function ManeuverGlyph({ kind }: { kind: StepKind }) {
+function ManeuverGlyph({ kind, small = false }: { kind: StepKind; small?: boolean }) {
   const rotate = isArrowKind(kind) ? stepRotation(kind) : 0;
   return (
-    <svg viewBox="0 0 24 24" className="size-12 shrink-0" aria-hidden>
+    <svg viewBox="0 0 24 24" className={`${small ? 'size-7' : 'size-12'} shrink-0`} aria-hidden>
       <circle cx="12" cy="12" r="11.5" fill="var(--c-paper)" stroke="var(--c-rule)" strokeWidth="0.6" />
       <g transform={`rotate(${rotate} 12 12)`} dangerouslySetInnerHTML={{ __html: glyphMarkup(kind, 'var(--c-ink)', 'var(--c-accent)') }} />
     </svg>
@@ -60,6 +60,18 @@ export function NavigationHUD({ controller }: { controller: PlaybackController |
           </>
         )}
       </section>
+
+      {snap.upcoming.length > 1 && (
+        <section className="plate pointer-events-auto flex flex-col gap-1 px-3 py-2" aria-label="Upcoming maneuvers">
+          {snap.upcoming.slice(1).map((item, index) => (
+            <div key={`${index}:${item.step.kind}:${item.step.lon}:${item.step.lat}`} className="flex items-center gap-2.5 font-mono text-[12px] text-ink-2">
+              <ManeuverGlyph kind={item.step.kind} small />
+              <span className="w-[4.5rem] shrink-0 text-right tabular-nums text-ink">{formatDistance(item.meters)}</span>
+              <span className="min-w-0 truncate">{item.step.instruction || stepTitle(item.step.kind)}</span>
+            </div>
+          ))}
+        </section>
+      )}
 
       <section className="plate pointer-events-auto flex flex-wrap items-center gap-x-3 gap-y-1.5 px-3 py-2 font-mono text-[11px] text-ink-2">
         {snap.roadName && <span className="max-w-[10rem] truncate text-ink">{snap.roadName}</span>}
