@@ -25,7 +25,7 @@ export interface RoutePlannerProps {
   onPlay: (route: Route) => void;
 }
 
-const NETWORK_LABEL: Record<Network, string> = { canyons: 'Canyon roads', all: 'All roads' };
+const NETWORK_LABEL: Record<Network, string> = { canyons: 'Prefer canyons, avoid freeways', all: 'All roads' };
 
 export function RoutePlanner({ viewer, look, onPlay }: RoutePlannerProps) {
   const [open, setOpen] = useState(false);
@@ -170,7 +170,7 @@ export function RoutePlanner({ viewer, look, onPlay }: RoutePlannerProps) {
         </header>
 
         <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-3">
-          <div role="group" aria-label="Roads to use" className="flex gap-1.5">
+          <div role="group" aria-label="Roads to use" className="flex flex-wrap gap-1.5">
             {(Object.keys(NETWORK_LABEL) as Network[]).map((network) => (
               <Chip
                 key={network}
