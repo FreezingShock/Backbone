@@ -2,6 +2,7 @@ import type { ControlKind, LonLat, RoadClass } from './types';
 import { curvatureDegPerKm, metersBetween, polylineMeters } from './geo';
 import { encodePolyline } from './polyline';
 import { classIndex } from './roadClasses';
+import { joinRoadEnds } from './join';
 import { GRAPH_FILE_VERSION, type ControlRow, type EdgeRow, type GraphFile, type IntersectionRow, type PlaceRow } from './graphFile';
 
 /** Road features as they come from public/data/roads.geojson (Census TIGER, classed by scripts/road-classes.mjs). */
@@ -25,6 +26,8 @@ export interface BuildInput {
   source: string;
   /** Controls farther than this from any node are dropped and reported. */
   controlSnapMeters?: number;
+  /** Road ends this close to another road (or to each other) are joined. Default 12 m. */
+  joinMeters?: number;
 }
 
 export interface BuildReport {
@@ -111,12 +114,13 @@ export interface Junction {
  * The junctions of the drivable roads: the points where routing nodes sit. These are road endpoints, which is how
  * TIGER stores most intersections, plus each inner point where two differently named roads meet at an angle. Some
  * TIGER crossings are a shared vertex in the middle of both lines, with no line ending there. A name change along
- * one straight road is not a junction, and neither is a repeated copy of the same road.
+ * one straight road is not a junction, and neither is a repeated copy of the same road. Crossings with a freeway or
+ * ramp are not added.
  */
 export function junctionKeys(roads: Road[]): Map<string, Junction> {
   const ends = new Set<string>();
   // Per point: the roads through it, with their directions of travel away from the point.
-  const through = new Map<string, { name: string; bearings: number[] }[]>();
+  const through = new Map<string, { name: string; cls: RoadClass; bearings: number[] }[]>();
   for (const road of roads) {
     const last = road.coords.length - 1;
     road.coords.forEach((point, i) => {
@@ -128,7 +132,7 @@ export function junctionKeys(roads: Road[]): Map<string, Junction> {
       if (i < last) bearings.push(bearingOf(point, road.coords[i + 1]));
       let list = through.get(key);
       if (!list) through.set(key, (list = []));
-      list.push({ name: road.name, bearings });
+      list.push({ name: road.name, cls: road.cls, bearings });
     });
   }
   const junctions = new Map<string, Junction>();
@@ -139,7 +143,8 @@ export function junctionKeys(roads: Road[]): Map<string, Junction> {
       for (let k = i + 1; k < list.length; k++) {
         const a = list[i];
         const b = list[k];
-        if (a.name === b.name) continue;
+        // Freeway and ramp crossings are left alone, so routes that avoid freeways see the same connections as before.
+        if (a.name === b.name || a.cls === 'highway' || b.cls === 'highway') continue;
         const meet = a.bearings.some((x) => b.bearings.some((y) => crossingAngle(x, y) >= 30));
         if (!meet) continue;
         const pair: [string, string] = a.name < b.name ? [a.name, b.name] : [b.name, a.name];
@@ -153,6 +158,20 @@ export function junctionKeys(roads: Road[]): Map<string, Junction> {
 }
 
 /**
+ * The drivable roads as the graph sees them: cleaned, with road ends that meet across a small gap joined (join.ts).
+ * Highway lines are never a join target. The junction controls are snapped to come from this same list.
+ */
+export function routingRoads(features: SourceRoad[], joinMeters = 12): Road[] {
+  const roads = drivableRoads(features);
+  const joined = roads.map((road) => road.coords);
+  joinRoadEnds(joined, roads.map((road) => road.cls !== 'highway'), joinMeters);
+  roads.forEach((road, i) => {
+    road.coords = joined[i];
+  });
+  return roads.filter((road) => road.coords.length >= 2);
+}
+
+/**
  * Builds the routing graph from classed road lines. Nodes are road endpoints, which is how TIGER stores
  * intersections, plus any interior point where another road starts. Each road is cut at its nodes into pieces,
  * and each piece becomes one undirected edge. Pure: no file or network access, so it runs in tests.
@@ -160,7 +179,7 @@ export function junctionKeys(roads: Road[]): Map<string, Junction> {
 export function buildGraphFile(input: BuildInput): { file: GraphFile; report: BuildReport } {
   const controlSnapMeters = input.controlSnapMeters ?? 30;
 
-  const roads = drivableRoads(input.roads);
+  const roads = routingRoads(input.roads, input.joinMeters);
   const endpointKeys = junctionKeys(roads);
 
   const nodeIndex = new Map<string, number>();

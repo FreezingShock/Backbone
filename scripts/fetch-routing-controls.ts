@@ -14,7 +14,7 @@
 // Run `npm run routing:build` afterwards to rebuild public/data/routing-graph.json.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { drivableRoads, junctionKeys, type Junction, type SourceRoad } from '../src/routing/buildGraph';
+import { junctionKeys, routingRoads, type Junction, type SourceRoad } from '../src/routing/buildGraph';
 import type { ControlKind, LonLat } from '../src/routing/types';
 
 // Same box as scripts/build-roads.mjs (and the graticule in src/layers/graticule.ts). Keep them in step.
@@ -189,7 +189,7 @@ function junctionLabel(junction: Junction): string {
 // The junctions the routing graph will have, indexed on a grid so a 30 m search checks only nearby cells.
 function buildJunctionIndex(): { nearby: (lon: number, lat: number) => { junction: IndexedJunction; meters: number }[]; count: number } {
   const features = (JSON.parse(readFileSync(ROADS, 'utf8')) as { features: SourceRoad[] }).features;
-  const roads = drivableRoads(features);
+  const roads = routingRoads(features);
   const junctions = junctionKeys(roads);
   rankOf = new Map();
   for (const road of roads) {

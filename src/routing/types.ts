@@ -54,6 +54,28 @@ export interface Step {
   instruction: string;
 }
 
+/**
+ * A run of one named road within a leg, for per-road difficulty. Consecutive road pieces with the same name and
+ * canyon crossing are merged. The difficulty comes from the same score as the leg (src/routing/difficulty.ts).
+ */
+export interface Segment {
+  roadName: string;
+  /** Canyon crossing label such as "Lynn" or "Potrero", or '' when the road is not one of the named crossings. */
+  crossing: string;
+  cls: RoadClass;
+  distanceM: number;
+  durationS: number;
+  difficulty: Difficulty;
+  /** 0 (straight) to 1 (100 degrees of heading change per km or more). Length-weighted over the run. */
+  curvature: number;
+  /** Degrees of heading change per km, length-weighted. */
+  curvatureDegPerKm: number;
+  /** Percent grade. null until the graph carries elevation, so the UI can say "not measured". */
+  gradePct: number | null;
+  /** The 0 to 100 difficulty score the band comes from. */
+  score: number;
+}
+
 export interface Leg {
   from: Stop;
   to: Stop;
@@ -62,6 +84,8 @@ export interface Leg {
   difficulty: Difficulty;
   geometry: LonLat[];
   steps: Step[];
+  /** Per-road runs, in order. Their distances add up to distanceM. Optional so older callers keep working. */
+  segments?: Segment[];
 }
 
 export interface Route {
@@ -75,17 +99,28 @@ export interface Route {
   departAt: string;
   /** ISO 8601 time, departAt plus durationS. */
   arriveAt: string;
-  /** Things the rider should know, such as a fallback to highways or missing control data. */
+  /** Things the rider should know, such as a freeway stretch or missing control data. */
   warnings: string[];
+  /** Main canyon road, the one with the most distance (for example "Lynn"). Set by planRoute and planRoutes. */
+  label?: string;
+  /** Position in the planRoutes result. 0 is the preferred route. Unset on routes from older calls. */
+  alternative?: number;
+  /** Share of the distance (0 to 1) on highway-class roads. 0 means the route never touches a freeway. */
+  highwayShare?: number;
 }
 
 export interface PlanOptions {
   /** ISO 8601 time to depart. Default: now. */
   departAt?: string;
-  /** Default true: canyon routes never use a highway-class road unless nothing else connects the stops. */
+  /**
+   * Default true. Highway-class roads are priced at about four times their drive time, so canyon roads win unless
+   * a freeway saves a lot of distance. They are never banned, so a route is found whenever one exists.
+   */
   avoidHighways?: boolean;
-  /** Default false. Drops the local class (streets, service roads, tracks). */
+  /** Default false. Local streets (service roads, tracks, neighborhood streets) are priced at three times their time, below a freeway. */
   avoidLocal?: boolean;
+  /** planRoutes only: how many distinct canyon alternatives to return, 1 to 3. Default 3. */
+  maxRoutes?: number;
 }
 
 export interface SuggestNear {

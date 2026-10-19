@@ -375,7 +375,7 @@
   {
    "id": "node/95428085",
    "kind": "traffic-signal",
-   "label": "Agoura Rd & La Venta Rd",
+   "label": "La Venta Rd & Stoneybrook Ln",
    "lon": -118.82246,
    "lat": 34.14916
   },
@@ -508,7 +508,7 @@
   {
    "id": "node/95464176",
    "kind": "traffic-signal",
-   "label": "Encino Vista Dr & Hillcrest Dr",
+   "label": "Rancho Rd & Hillcrest Dr",
    "lon": -118.85848,
    "lat": 34.18112
   },
@@ -690,7 +690,7 @@
   {
    "id": "node/95516118",
    "kind": "stop-sign",
-   "label": "Conejo School Rd & Los Feliz Dr",
+   "label": "Los Feliz Dr",
    "lon": -118.84368,
    "lat": 34.17704
   },
@@ -753,7 +753,7 @@
   {
    "id": "node/95525764",
    "kind": "traffic-signal",
-   "label": "Conejo School Rd & Hillcrest Dr",
+   "label": "Conejo School Rd",
    "lon": -118.84117,
    "lat": 34.1794
   },
@@ -1283,13 +1283,6 @@
    "lat": 34.1365
   },
   {
-   "id": "node/122502563",
-   "kind": "traffic-signal",
-   "label": "De Soto Ave & El Camino Real",
-   "lon": -118.58817,
-   "lat": 34.16767
-  },
-  {
    "id": "node/122506076",
    "kind": "traffic-signal",
    "label": "Tampa Ave",
@@ -1348,7 +1341,7 @@
   {
    "id": "node/122560673",
    "kind": "stop-sign",
-   "label": "Ponce Ave & Hamlin St",
+   "label": "Hamlin St",
    "lon": -118.62193,
    "lat": 34.18897
   },
@@ -1614,7 +1607,7 @@
   {
    "id": "node/122621732",
    "kind": "stop-sign",
-   "label": "Estrondo Dr & Oak View Dr",
+   "label": "Dormie Pl & Estrondo Dr",
    "lon": -118.50115,
    "lat": 34.15379
   },
@@ -1733,7 +1726,7 @@
   {
    "id": "node/122643203",
    "kind": "traffic-signal",
-   "label": "Ocean Ave & California Ave",
+   "label": "California Incline & Ocean Ave",
    "lon": -118.50282,
    "lat": 34.01817
   },
@@ -1803,7 +1796,7 @@
   {
    "id": "node/122648022",
    "kind": "stop-sign",
-   "label": "Radcliffe Ave & Bowdoin St",
+   "label": "Bowdoin St",
    "lon": -118.5299,
    "lat": 34.04593
   },
@@ -1859,7 +1852,7 @@
   {
    "id": "node/122653707",
    "kind": "stop-sign",
-   "label": "Metate Ln & Sea Daisy Dr",
+   "label": "Metate Ln & Shearwater Ln",
    "lon": -118.81685,
    "lat": 34.01333
   },
@@ -2104,7 +2097,7 @@
   {
    "id": "node/122707002",
    "kind": "stop-sign",
-   "label": "Fountainwood St & Rustling Oaks Dr",
+   "label": "Rustling Oaks Dr",
    "lon": -118.7602,
    "lat": 34.16567
   },
@@ -2321,7 +2314,7 @@
   {
    "id": "node/122738974",
    "kind": "traffic-signal",
-   "label": "Las Virgenes Rd & Lost Hills Rd",
+   "label": "Lost Hills Rd",
    "lon": -118.70577,
    "lat": 34.12586
   },
@@ -2419,7 +2412,7 @@
   {
    "id": "node/122761988",
    "kind": "traffic-signal",
-   "label": "State Rte 27 & Pacific Coast Hwy",
+   "label": "State Rte 27 & Topanga Canyon Blvd",
    "lon": -118.5793,
    "lat": 34.04011
   },
@@ -2594,7 +2587,7 @@
   {
    "id": "node/122783226",
    "kind": "traffic-signal",
-   "label": "Channel Rd & Pacific Coast Hwy",
+   "label": "Palisades Beach Rd & Channel Rd",
    "lon": -118.51923,
    "lat": 34.02816
   },
@@ -2657,7 +2650,7 @@
   {
    "id": "node/122803006",
    "kind": "traffic-signal",
-   "label": "Wildlife Rd & Pacific Coast Hwy",
+   "label": "Wildlife Rd & Zumirez Dr",
    "lon": -118.7962,
    "lat": 34.02049
   },
@@ -3119,7 +3112,7 @@
   {
    "id": "node/122852743",
    "kind": "traffic-signal",
-   "label": "US Hwy 101 Bus & De Soto Ave",
+   "label": "US Hwy 101 Bus & Ventura Blvd",
    "lon": -118.58827,
    "lat": 34.16641
   },
@@ -3602,7 +3595,7 @@
   {
    "id": "node/122948695",
    "kind": "traffic-signal",
-   "label": "Entrada Dr & Pacific Coast Hwy",
+   "label": "Palisades Beach Rd & Entrada Dr",
    "lon": -118.51876,
    "lat": 34.02784
   },
@@ -4694,7 +4687,7 @@
   {
    "id": "node/123282300",
    "kind": "traffic-signal",
-   "label": "Broad Beach Rd & Pacific Coast Hwy",
+   "label": "Broad Beach Rd & Trancas Canyon Rd",
    "lon": -118.84372,
    "lat": 34.031
   },
@@ -4764,7 +4757,7 @@
   {
    "id": "node/123306944",
    "kind": "traffic-signal",
-   "label": "Busch Dr & Pacific Coast Hwy",
+   "label": "Busch Dr",
    "lon": -118.8183,
    "lat": 34.01671
   },
@@ -4778,7 +4771,7 @@
   {
    "id": "node/123307019",
    "kind": "traffic-signal",
-   "label": "Kanan Dume Rd & Pacific Coast Hwy",
+   "label": "Kanan Dume Rd & Co Hwy N9",
    "lon": -118.8026,
    "lat": 34.02151
   },
@@ -4897,7 +4890,7 @@
   {
    "id": "node/123350354",
    "kind": "stop-sign",
-   "label": "Bayliss Rd & Westridge Rd",
+   "label": "Bayliss Rd & Banyan Dr",
    "lon": -118.50123,
    "lat": 34.07333
   },
@@ -5226,7 +5219,7 @@
   {
    "id": "node/123490215",
    "kind": "stop-sign",
-   "label": "Oakdale Ave & Wells Dr",
+   "label": "Oakdale Ave",
    "lon": -118.56583,
    "lat": 34.16373
   },
@@ -5856,7 +5849,7 @@
   {
    "id": "node/880567325",
    "kind": "traffic-signal",
-   "label": "Malibu Canyon Rd & Civic Center Way",
+   "label": "Civic Center Way",
    "lon": -118.70174,
    "lat": 34.03901
   },
@@ -6171,7 +6164,7 @@
   {
    "id": "node/2266464630",
    "kind": "stop-sign",
-   "label": "Glenwood Pl & Hillcrest Dr",
+   "label": "Glenwood Pl & Lone Oak Dr",
    "lon": -118.84489,
    "lat": 34.18077
   },
@@ -6701,13 +6694,6 @@
    "lat": 34.18173
   },
   {
-   "id": "node/3682845096",
-   "kind": "stop-sign",
-   "label": "Hillcrest Dr & Lone Oak Dr",
-   "lon": -118.84452,
-   "lat": 34.1809
-  },
-  {
    "id": "node/3682845301",
    "kind": "stop-sign",
    "label": "Almon Dr & Hillcrest Dr",
@@ -6948,7 +6934,7 @@
   {
    "id": "node/4903066359",
    "kind": "traffic-signal",
-   "label": "Sunset Blvd & Pacific Coast Hwy",
+   "label": "Sunset Blvd",
    "lon": -118.55537,
    "lat": 34.03857
   },
@@ -6979,13 +6965,6 @@
    "label": "Mulholland Hwy & Cornell Rd",
    "lon": -118.75118,
    "lat": 34.11316
-  },
-  {
-   "id": "node/5684432781",
-   "kind": "traffic-signal",
-   "label": "Palisades Beach Rd & Pacific Coast Hwy",
-   "lon": -118.51965,
-   "lat": 34.02834
   },
   {
    "id": "node/5762680511",
@@ -7039,7 +7018,7 @@
   {
    "id": "node/5960380519",
    "kind": "stop-sign",
-   "label": "Gainsborough Rd & Tuolomne Ave",
+   "label": "Gainsborough Rd & Tuolumne Ave",
    "lon": -118.88973,
    "lat": 34.19147
   },
@@ -7088,21 +7067,21 @@
   {
    "id": "node/5973933742",
    "kind": "stop-sign",
-   "label": "Martinez St & San Feliciano Dr",
+   "label": "Martinez St",
    "lon": -118.60876,
    "lat": 34.16261
   },
   {
    "id": "node/5973933748",
    "kind": "stop-sign",
-   "label": "Villeboso Ave & San Feliciano Dr",
+   "label": "Villeboso Ave & Crespi St",
    "lon": -118.60825,
    "lat": 34.16541
   },
   {
    "id": "node/5979901769",
    "kind": "stop-sign",
-   "label": "",
+   "label": "Calabasas Rd",
    "lon": -118.64126,
    "lat": 34.1569
   },
@@ -7247,13 +7226,6 @@
    "lat": 34.18031
   },
   {
-   "id": "node/6031887098",
-   "kind": "traffic-signal",
-   "label": "Sunset Blvd & Pacific Coast Hwy",
-   "lon": -118.55582,
-   "lat": 34.03845
-  },
-  {
    "id": "node/6036472904",
    "kind": "traffic-signal",
    "label": "Bay Club Dr & Pacific Coast Hwy",
@@ -7284,16 +7256,9 @@
   {
    "id": "node/6139909089",
    "kind": "stop-sign",
-   "label": "Berquist Ave & Friar St",
+   "label": "Friar St",
    "lon": -118.63494,
    "lat": 34.1855
-  },
-  {
-   "id": "node/6139909090",
-   "kind": "stop-sign",
-   "label": "Berquist Ave & Friar St",
-   "lon": -118.63474,
-   "lat": 34.18544
   },
   {
    "id": "node/6147054423",
@@ -7655,7 +7620,7 @@
   {
    "id": "node/6451167315",
    "kind": "stop-sign",
-   "label": "El Canon Ave",
+   "label": "Calabasas Rd & El Canon Ave",
    "lon": -118.63836,
    "lat": 34.15758
   },
@@ -8215,16 +8180,9 @@
   {
    "id": "node/6554071372",
    "kind": "stop-sign",
-   "label": "Sale Ave & Friar St",
+   "label": "Friar St",
    "lon": -118.61912,
    "lat": 34.18547
-  },
-  {
-   "id": "node/6554071373",
-   "kind": "stop-sign",
-   "label": "Sale Ave & Friar St",
-   "lon": -118.6189,
-   "lat": 34.18555
   },
   {
    "id": "node/6554071374",
@@ -8782,7 +8740,7 @@
   {
    "id": "node/6593539778",
    "kind": "stop-sign",
-   "label": "Owensmouth Ave & Marylee St",
+   "label": "Marylee St",
    "lon": -118.60166,
    "lat": 34.17534
   },
@@ -9230,16 +9188,9 @@
   {
    "id": "node/6777263983",
    "kind": "stop-sign",
-   "label": "Ventura Blvd & Ponce Ave",
+   "label": "Ponce Ave",
    "lon": -118.6209,
    "lat": 34.167
-  },
-  {
-   "id": "node/6777263984",
-   "kind": "stop-sign",
-   "label": "Ventura Blvd & Ponce Ave",
-   "lon": -118.62065,
-   "lat": 34.1667
   },
   {
    "id": "node/6777269485",
@@ -9317,13 +9268,6 @@
    "label": "Fallbrook Ave & Leonora Dr",
    "lon": -118.62316,
    "lat": 34.16717
-  },
-  {
-   "id": "node/6777269504",
-   "kind": "stop-sign",
-   "label": "Fallbrook Ave & Leonora Dr",
-   "lon": -118.62349,
-   "lat": 34.16698
   },
   {
    "id": "node/6777269505",
@@ -9905,13 +9849,6 @@
    "label": "Chimineas Ave & Erwin St",
    "lon": -118.52865,
    "lat": 34.18398
-  },
-  {
-   "id": "node/6777989347",
-   "kind": "stop-sign",
-   "label": "Chimineas Ave & Erwin St",
-   "lon": -118.52876,
-   "lat": 34.1838
   },
   {
    "id": "node/6777989350",
@@ -11272,13 +11209,6 @@
    "lat": 34.1668
   },
   {
-   "id": "node/6779625981",
-   "kind": "stop-sign",
-   "label": "Crespi St & San Feliciano Dr",
-   "lon": -118.60809,
-   "lat": 34.16515
-  },
-  {
    "id": "node/6779625982",
    "kind": "stop-sign",
    "label": "De la Guerra St & San Feliciano Dr",
@@ -11291,13 +11221,6 @@
    "label": "Galvez St & San Feliciano Dr",
    "lon": -118.60812,
    "lat": 34.16351
-  },
-  {
-   "id": "node/6779626385",
-   "kind": "stop-sign",
-   "label": "Martinez St & San Feliciano Dr",
-   "lon": -118.60884,
-   "lat": 34.16278
   },
   {
    "id": "node/6779626387",
@@ -11750,7 +11673,7 @@
   {
    "id": "node/6779705862",
    "kind": "stop-sign",
-   "label": "Vanalden Ave & Casa Dr",
+   "label": "Casa Dr",
    "lon": -118.55097,
    "lat": 34.16214
   },
@@ -12504,13 +12427,6 @@
    "lat": 34.18114
   },
   {
-   "id": "node/6786362520",
-   "kind": "stop-sign",
-   "label": "Cam Portal & Pso Primario",
-   "lon": -118.659,
-   "lat": 34.13805
-  },
-  {
    "id": "node/6786362521",
    "kind": "stop-sign",
    "label": "Cll Cedro & Pso Primario",
@@ -12576,7 +12492,7 @@
   {
    "id": "node/6786407614",
    "kind": "stop-sign",
-   "label": "Mulholland Hwy",
+   "label": "Park South St & Parksouth St",
    "lon": -118.64183,
    "lat": 34.13736
   },
@@ -13411,13 +13327,6 @@
    "kind": "stop-sign",
    "label": "Hesperia Ave & Vanowen St",
    "lon": -118.52624,
-   "lat": 34.194
-  },
-  {
-   "id": "node/6786716566",
-   "kind": "stop-sign",
-   "label": "Bertrand Ave & Vanowen St",
-   "lon": -118.52443,
    "lat": 34.194
   },
   {
@@ -14921,7 +14830,7 @@
   {
    "id": "node/6944511692",
    "kind": "traffic-signal",
-   "label": "Sunset Blvd",
+   "label": "Sunset Blvd & Temescal Canyon Rd",
    "lon": -118.52949,
    "lat": 34.04975
   },
@@ -15180,16 +15089,9 @@
   {
    "id": "node/7090084343",
    "kind": "stop-sign",
-   "label": "Alta Ave & 7th St",
+   "label": "Alta Ave",
    "lon": -118.5038,
    "lat": 34.02852
-  },
-  {
-   "id": "node/7090084344",
-   "kind": "stop-sign",
-   "label": "Alta Ave & 7th St",
-   "lon": -118.50402,
-   "lat": 34.02871
   },
   {
    "id": "node/7110877867",
@@ -15269,13 +15171,6 @@
    "lat": 34.14636
   },
   {
-   "id": "node/7270949644",
-   "kind": "traffic-signal",
-   "label": "El Camino Real & Moorpark Fwy",
-   "lon": -118.85949,
-   "lat": 34.17586
-  },
-  {
    "id": "node/7301245626",
    "kind": "traffic-signal",
    "label": "Sunset Blvd & Amalfi Dr",
@@ -15320,7 +15215,7 @@
   {
    "id": "node/7415646584",
    "kind": "stop-sign",
-   "label": "Driver Ave & Foothill Dr",
+   "label": "Foothill Dr",
    "lon": -118.74655,
    "lat": 34.14952
   },
@@ -16447,7 +16342,7 @@
   {
    "id": "node/9030353679",
    "kind": "stop-sign",
-   "label": "Reyes Adobe Rd & Rainbow Hill Rd",
+   "label": "Rainbow Hill Rd",
    "lon": -118.78307,
    "lat": 34.15898
   },
@@ -16499,13 +16394,6 @@
    "label": "Moorpark Rd & Janss Rd",
    "lon": -118.86849,
    "lat": 34.19957
-  },
-  {
-   "id": "node/9036426262",
-   "kind": "traffic-signal",
-   "label": "Lost Hills Rd & El Camino Real",
-   "lon": -118.7096,
-   "lat": 34.14056
   },
   {
    "id": "node/9036627165",
@@ -16795,6 +16683,13 @@
    "lat": 34.15531
   },
   {
+   "id": "node/9099915249",
+   "kind": "traffic-signal",
+   "label": "Triunfo Canyon Rd & Triunfo Cyn Rd",
+   "lon": -118.82243,
+   "lat": 34.13204
+  },
+  {
    "id": "node/9099915327",
    "kind": "traffic-signal",
    "label": "Lindero Canyon Rd & Triunfo Canyon Rd",
@@ -16968,13 +16863,6 @@
    "label": "Abbeyville Ave & Ave San Luis",
    "lon": -118.63281,
    "lat": 34.16077
-  },
-  {
-   "id": "node/9257956368",
-   "kind": "traffic-signal",
-   "label": "Burbank Blvd",
-   "lon": -118.60688,
-   "lat": 34.17197
   },
   {
    "id": "node/9257956375",
@@ -17971,13 +17859,6 @@
    "lat": 34.1463
   },
   {
-   "id": "node/9488385130",
-   "kind": "traffic-signal",
-   "label": "Webb Way & Pacific Coast Hwy",
-   "lon": -118.69097,
-   "lat": 34.03474
-  },
-  {
    "id": "node/9488385205",
    "kind": "stop-sign",
    "label": "Cross Creek Rd",
@@ -18055,13 +17936,6 @@
    "lat": 34.02916
   },
   {
-   "id": "node/9888151871",
-   "kind": "traffic-signal",
-   "label": "Chautauqua Blvd & Pacific Coast Hwy",
-   "lon": -118.51934,
-   "lat": 34.02849
-  },
-  {
    "id": "node/9888173094",
    "kind": "stop-sign",
    "label": "Alma Real Dr & Altata Dr",
@@ -18071,7 +17945,7 @@
   {
    "id": "node/9888173107",
    "kind": "stop-sign",
-   "label": "Almoloya Dr & El Cerco Pl",
+   "label": "Almoloya Dr",
    "lon": -118.52275,
    "lat": 34.03865
   },
@@ -18183,16 +18057,9 @@
   {
    "id": "node/10074072269",
    "kind": "stop-sign",
-   "label": "Las Virgenes Rd & Thousand Oaks Blvd",
+   "label": "Thousand Oaks Blvd",
    "lon": -118.7026,
    "lat": 34.16011
-  },
-  {
-   "id": "node/10074072270",
-   "kind": "stop-sign",
-   "label": "Las Virgenes Rd & Thousand Oaks Blvd",
-   "lon": -118.7023,
-   "lat": 34.16004
   },
   {
    "id": "node/10076396235",
@@ -18218,16 +18085,9 @@
   {
    "id": "node/10167860992",
    "kind": "stop-sign",
-   "label": "Baxter Way",
+   "label": "",
    "lon": -118.81837,
    "lat": 34.15651
-  },
-  {
-   "id": "node/10167860993",
-   "kind": "stop-sign",
-   "label": "Baxter Way",
-   "lon": -118.8185,
-   "lat": 34.15668
   },
   {
    "id": "node/10167861121",
@@ -19037,14 +18897,14 @@
   {
    "id": "node/10940958368",
    "kind": "stop-sign",
-   "label": "Park Capri & Park Sienna",
+   "label": "Park Capri",
    "lon": -118.64269,
    "lat": 34.14891
   },
   {
    "id": "node/10962628568",
    "kind": "stop-sign",
-   "label": "Lindero Canyon Rd",
+   "label": "",
    "lon": -118.79957,
    "lat": 34.15301
   },
@@ -19427,13 +19287,6 @@
    "lat": 34.16349
   },
   {
-   "id": "node/12204992308",
-   "kind": "traffic-signal",
-   "label": "Triunfo Canyon Rd & Triunfo Cyn Rd",
-   "lon": -118.82264,
-   "lat": 34.13188
-  },
-  {
    "id": "node/12290289092",
    "kind": "stop-sign",
    "label": "Reyes Adobe Rd & Stonecrest Dr",
@@ -19681,7 +19534,7 @@
   {
    "id": "node/13176839799",
    "kind": "stop-sign",
-   "label": "Potrero Rd",
+   "label": "Potrero Rd & Janss Rd",
    "lon": -118.87785,
    "lat": 34.14099
   },
@@ -19714,32 +19567,11 @@
    "lat": 34.1833
   },
   {
-   "id": "node/13348732542",
-   "kind": "traffic-signal",
-   "label": "Cross Creek Rd & Pacific Coast Hwy",
-   "lon": -118.68514,
-   "lat": 34.03442
-  },
-  {
    "id": "node/13419177597",
    "kind": "traffic-signal",
    "label": "Sunset Blvd & Marquez Pl",
    "lon": -118.54933,
    "lat": 34.04186
-  },
-  {
-   "id": "node/13419236136",
-   "kind": "traffic-signal",
-   "label": "Sunset Blvd & Temescal Canyon Rd",
-   "lon": -118.52939,
-   "lat": 34.04957
-  },
-  {
-   "id": "node/13419236137",
-   "kind": "traffic-signal",
-   "label": "Sunset Blvd & Temescal Canyon Rd",
-   "lon": -118.52915,
-   "lat": 34.04971
   },
   {
    "id": "node/13419241260",
@@ -19833,13 +19665,6 @@
    "lat": 34.19154
   },
   {
-   "id": "node/13510566028",
-   "kind": "traffic-signal",
-   "label": "Ventu Park Rd & Biotech Ct",
-   "lon": -118.91715,
-   "lat": 34.19155
-  },
-  {
    "id": "node/13510567834",
    "kind": "traffic-signal",
    "label": "Lynn Rd & Kelly Rd",
@@ -19901,13 +19726,6 @@
    "label": "Moorpark Rd & Wilbur Rd",
    "lon": -118.87516,
    "lat": 34.18657
-  },
-  {
-   "id": "node/13510584699",
-   "kind": "traffic-signal",
-   "label": "Moorpark Rd & Wilbur Rd",
-   "lon": -118.8749,
-   "lat": 34.18642
   },
   {
    "id": "node/13510586240",
@@ -20006,13 +19824,6 @@
    "label": "Janss Rd & Montgomery Rd",
    "lon": -118.86395,
    "lat": 34.19958
-  },
-  {
-   "id": "node/13510610367",
-   "kind": "traffic-signal",
-   "label": "Moorpark Rd & El Camino Real",
-   "lon": -118.87671,
-   "lat": 34.17714
   },
   {
    "id": "node/13510612326",
@@ -20143,16 +19954,9 @@
   {
    "id": "node/13510678421",
    "kind": "traffic-signal",
-   "label": "Parkway Calabasas",
+   "label": "Parkway Calabasas & Park Sorrento",
    "lon": -118.64967,
    "lat": 34.15109
-  },
-  {
-   "id": "node/13510678422",
-   "kind": "traffic-signal",
-   "label": "Parkway Calabasas & Park Sorrento",
-   "lon": -118.64974,
-   "lat": 34.15125
   },
   {
    "id": "node/13510679934",
@@ -20197,20 +20001,6 @@
    "lat": 34.15246
   },
   {
-   "id": "node/13510685006",
-   "kind": "traffic-signal",
-   "label": "Calabasas Rd & Parkway Calabasas",
-   "lon": -118.65162,
-   "lat": 34.15224
-  },
-  {
-   "id": "node/13510685007",
-   "kind": "traffic-signal",
-   "label": "Calabasas Rd & Parkway Calabasas",
-   "lon": -118.65127,
-   "lat": 34.15222
-  },
-  {
    "id": "node/13510695885",
    "kind": "traffic-signal",
    "label": "Calabasas Rd",
@@ -20227,7 +20017,7 @@
   {
    "id": "node/13510705111",
    "kind": "traffic-signal",
-   "label": "Park Granada",
+   "label": "Calabasas Rd & Park Granada",
    "lon": -118.64298,
    "lat": 34.15613
   },
@@ -20267,32 +20057,18 @@
    "lat": 34.14954
   },
   {
-   "id": "node/13510709480",
+   "id": "node/13510709479",
    "kind": "traffic-signal",
    "label": "Parkway Calabasas & Park Granada",
-   "lon": -118.64724,
-   "lat": 34.14933
-  },
-  {
-   "id": "node/13510709481",
-   "kind": "traffic-signal",
-   "label": "Parkway Calabasas & Park Granada",
-   "lon": -118.64757,
-   "lat": 34.14936
+   "lon": -118.64725,
+   "lat": 34.14957
   },
   {
    "id": "node/13510710638",
    "kind": "traffic-signal",
-   "label": "Parkway Calabasas",
+   "label": "Parkway Calabasas & Park Entrada",
    "lon": -118.65389,
    "lat": 34.1416
-  },
-  {
-   "id": "node/13510710639",
-   "kind": "traffic-signal",
-   "label": "Parkway Calabasas & Park Entrada",
-   "lon": -118.65408,
-   "lat": 34.14159
   },
   {
    "id": "node/13510714377",
@@ -20344,20 +20120,6 @@
    "lat": 34.02368
   },
   {
-   "id": "node/13593901478",
-   "kind": "traffic-signal",
-   "label": "Montana Ave & 4th St",
-   "lon": -118.50477,
-   "lat": 34.02443
-  },
-  {
-   "id": "node/13593901480",
-   "kind": "traffic-signal",
-   "label": "Montana Ave & 4th St",
-   "lon": -118.50453,
-   "lat": 34.02462
-  },
-  {
    "id": "node/13593901481",
    "kind": "stop-sign",
    "label": "Montana Ave & 6th St",
@@ -20407,16 +20169,9 @@
    "lat": 34.16183
   },
   {
-   "id": "node/13606679923",
-   "kind": "traffic-signal",
-   "label": "Wendy Dr & Old Conejo Rd",
-   "lon": -118.94039,
-   "lat": 34.18895
-  },
-  {
    "id": "node/13606679924",
    "kind": "traffic-signal",
-   "label": "Wendy Dr & Old Conejo Rd",
+   "label": "Old Conejo Rd",
    "lon": -118.94007,
    "lat": 34.18883
   },
@@ -20510,13 +20265,6 @@
    "label": "Kanan Rd & Laro Dr",
    "lon": -118.75643,
    "lat": 34.15942
-  },
-  {
-   "id": "node/13607845190",
-   "kind": "traffic-signal",
-   "label": "Kanan Rd & Laro Dr",
-   "lon": -118.75653,
-   "lat": 34.15929
   },
   {
    "id": "node/13607849238",
@@ -20715,13 +20463,6 @@
    "lat": 34.1661
   },
   {
-   "id": "node/13607880583",
-   "kind": "traffic-signal",
-   "label": "Kanan Rd & Fountainwood St",
-   "lon": -118.75804,
-   "lat": 34.16597
-  },
-  {
    "id": "node/13607881316",
    "kind": "traffic-signal",
    "label": "Thousand Oaks Blvd & Marmon Ave",
@@ -20801,16 +20542,9 @@
   {
    "id": "node/13607883340",
    "kind": "traffic-signal",
-   "label": "",
+   "label": "Westlake Blvd",
    "lon": -118.82425,
    "lat": 34.15847
-  },
-  {
-   "id": "node/13607883341",
-   "kind": "traffic-signal",
-   "label": "Westlake Blvd",
-   "lon": -118.82444,
-   "lat": 34.15843
   },
   {
    "id": "node/13607883506",
@@ -20864,7 +20598,7 @@
   {
    "id": "node/13607886515",
    "kind": "traffic-signal",
-   "label": "Kanan Rd & Canwood St",
+   "label": "Co Hwy N9 & Canwood St",
    "lon": -118.76125,
    "lat": 34.147
   },
@@ -20874,13 +20608,6 @@
    "label": "Kanan Rd & Co Hwy N9",
    "lon": -118.76099,
    "lat": 34.14672
-  },
-  {
-   "id": "node/13607886519",
-   "kind": "traffic-signal",
-   "label": "Kanan Rd & Co Hwy N9",
-   "lon": -118.76079,
-   "lat": 34.14695
   },
   {
    "id": "node/13607886522",
@@ -20960,18 +20687,18 @@
    "lat": 34.15562
   },
   {
-   "id": "node/13607905391",
-   "kind": "traffic-signal",
-   "label": "Reyes Adobe Rd & Thousand Oaks Blvd",
-   "lon": -118.78124,
-   "lat": 34.15583
-  },
-  {
    "id": "node/13607905392",
    "kind": "traffic-signal",
    "label": "Reyes Adobe Rd & Thousand Oaks Blvd",
    "lon": -118.78108,
    "lat": 34.15572
+  },
+  {
+   "id": "node/13607905393",
+   "kind": "traffic-signal",
+   "label": "Reyes Adobe Rd & Thousand Oaks Blvd",
+   "lon": -118.78123,
+   "lat": 34.15551
   },
   {
    "id": "node/13607906086",
@@ -20990,16 +20717,9 @@
   {
    "id": "node/13607907011",
    "kind": "traffic-signal",
-   "label": "Kanan Rd & Sunnycrest Dr",
+   "label": "Kanan Rd",
    "lon": -118.76,
    "lat": 34.17643
-  },
-  {
-   "id": "node/13607907013",
-   "kind": "traffic-signal",
-   "label": "Kanan Rd & Sunnycrest Dr",
-   "lon": -118.75958,
-   "lat": 34.17652
   },
   {
    "id": "node/13607907308",
@@ -21049,13 +20769,6 @@
    "label": "Kanan Rd & Conifer St",
    "lon": -118.7583,
    "lat": 34.17088
-  },
-  {
-   "id": "node/13607909353",
-   "kind": "traffic-signal",
-   "label": "John Tyler Dr & Pacific Coast Hwy",
-   "lon": -118.71015,
-   "lat": 34.03416
   },
   {
    "id": "node/13607909354",
@@ -21123,30 +20836,23 @@
   {
    "id": "node/13607912252",
    "kind": "traffic-signal",
-   "label": "Morning View Dr & Pacific Coast Hwy",
+   "label": "Morning View Dr",
    "lon": -118.82776,
    "lat": 34.02016
   },
   {
-   "id": "node/13607912253",
-   "kind": "traffic-signal",
-   "label": "Pacific Coast Hwy & State Rte 1",
-   "lon": -118.82803,
-   "lat": 34.02028
-  },
-  {
-   "id": "node/13607912254",
-   "kind": "traffic-signal",
-   "label": "Morning View Dr",
-   "lon": -118.82776,
-   "lat": 34.02037
-  },
-  {
    "id": "node/13607916256",
    "kind": "traffic-signal",
-   "label": "Webb Way & Pacific Coast Hwy",
+   "label": "Webb Way",
    "lon": -118.69108,
    "lat": 34.03448
+  },
+  {
+   "id": "node/13607916257",
+   "kind": "traffic-signal",
+   "label": "Webb Way",
+   "lon": -118.69127,
+   "lat": 34.03492
   },
   {
    "id": "node/13607921785",
@@ -21214,44 +20920,16 @@
   {
    "id": "node/13607928038",
    "kind": "traffic-signal",
-   "label": "Triunfo Canyon Rd & Three Springs Dr",
+   "label": "Three Springs Dr",
    "lon": -118.83229,
    "lat": 34.14029
   },
   {
    "id": "node/13607932223",
    "kind": "traffic-signal",
-   "label": "Malibu Canyon Rd & Pacific Coast Hwy",
+   "label": "Malibu Canyon Rd & Co Hwy N1",
    "lon": -118.70355,
    "lat": 34.03465
-  },
-  {
-   "id": "node/13607932224",
-   "kind": "traffic-signal",
-   "label": "Malibu Canyon Rd & Pacific Coast Hwy",
-   "lon": -118.7034,
-   "lat": 34.03491
-  },
-  {
-   "id": "node/13607932225",
-   "kind": "traffic-signal",
-   "label": "Malibu Canyon Rd & Pacific Coast Hwy",
-   "lon": -118.70317,
-   "lat": 34.03479
-  },
-  {
-   "id": "node/13607932226",
-   "kind": "traffic-signal",
-   "label": "Winter Mesa Dr & Pacific Coast Hwy",
-   "lon": -118.70336,
-   "lat": 34.03455
-  },
-  {
-   "id": "node/13607940009",
-   "kind": "traffic-signal",
-   "label": "Malibu Canyon Rd & Co Hwy N1",
-   "lon": -118.70176,
-   "lat": 34.03919
   },
   {
    "id": "node/13608531486",

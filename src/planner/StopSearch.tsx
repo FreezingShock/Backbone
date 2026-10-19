@@ -2,6 +2,7 @@ import { useEffect, useId, useState, type KeyboardEvent, type Ref } from 'react'
 import { suggestStops } from './engine';
 import { messageOf } from './useRoutePlan';
 import type { Network, Stop } from './types';
+import type { SuggestNear } from '../routing/types';
 
 const KIND_LABEL: Record<Stop['kind'], string> = {
   city: 'Center',
@@ -14,13 +15,15 @@ const SEARCH_SETTLE_MS = 80;
 
 export interface StopSearchProps {
   network: Network;
+  /** The last stop on the route. Suggestions near it come first. */
+  near?: SuggestNear;
   placeholder: string;
   onPick: (stop: Stop) => void;
   inputRef?: Ref<HTMLInputElement>;
 }
 
 /** Search box with suggestions: city centers, places, and road junctions on the chosen network. */
-export function StopSearch({ network, placeholder, onPick, inputRef }: StopSearchProps) {
+export function StopSearch({ network, near, placeholder, onPick, inputRef }: StopSearchProps) {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
@@ -32,7 +35,7 @@ export function StopSearch({ network, placeholder, onPick, inputRef }: StopSearc
   useEffect(() => {
     let cancelled = false;
     const timer = window.setTimeout(() => {
-      suggestStops(query, { network })
+      suggestStops(query, { network, near })
         .then((stops) => {
           if (cancelled) return;
           setResults(stops);
@@ -47,7 +50,7 @@ export function StopSearch({ network, placeholder, onPick, inputRef }: StopSearc
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [query, network]);
+  }, [query, network, near?.lon, near?.lat]);
 
   const pick = (stop: Stop) => {
     setQuery('');
@@ -101,7 +104,7 @@ export function StopSearch({ network, placeholder, onPick, inputRef }: StopSearc
           className="plate absolute top-full left-0 z-30 mt-1 max-h-72 w-full overflow-y-auto py-1"
         >
           <li role="presentation" className="px-3 pt-1 pb-1.5 font-mono text-[10px] tracking-[0.18em] text-ink-3 uppercase">
-            {query ? 'Matches' : 'Suggested'}
+            {query ? 'Matches' : near ? 'Near your last stop' : 'Suggested'}
           </li>
           {error && (
             <li role="presentation" className="px-3 py-1.5 font-mono text-[11px] text-alert">

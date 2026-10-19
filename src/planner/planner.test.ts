@@ -5,7 +5,9 @@ import assert from 'node:assert/strict';
 import { setRoutingGraph } from '../routing';
 import type { GraphFile } from '../routing/graphFile';
 import { DIFFICULTY_META, harder } from './difficulty';
-import { customStop, planRoute, suggestStops } from './engine';
+import { customStop, mainRoadLabel, planRoute, planRouteOptions, suggestStops } from './engine';
+import { EXTRA_STOPS } from './extraStops';
+import { metersBetween } from '../routing/geo';
 import { formatClock, formatDistance, formatDuration, fromLocalInput, stopLetter, toLocalInput } from './format';
 import { INITIAL_PLAN, MAX_STOPS, planReducer, defaultRouteName } from './planState';
 import { PRESET_ROUTES } from './presets';
@@ -159,4 +161,95 @@ test('the routing engine suggests junctions and places for the search box', asyn
   loadGraph();
   const suggestions = await suggestStops('newbury', { network: 'canyons' });
   assert.ok(suggestions.some((candidate) => candidate.name === 'Newbury Park'));
+});
+
+test('with no query, suggestions are branch-off junctions near the last stop, then city centers', async () => {
+  loadGraph();
+  const near = { lon: -118.9226, lat: 34.1786 };
+  const suggestions = await suggestStops('', { network: 'canyons', near }, 8);
+  assert.ok(suggestions.length > 0 && suggestions.length <= 8);
+  const junctions = suggestions.filter((candidate) => candidate.kind === 'intersection');
+  assert.ok(junctions.length > 0, 'expected at least one branch-off junction near Newbury Park');
+  for (const junction of junctions) {
+    const meters = metersBetween([near.lon, near.lat], [junction.lon, junction.lat]);
+    assert.ok(meters <= 15000, `${junction.name} is ${Math.round(meters)} m away`);
+    assert.match(junction.name, / & /);
+  }
+  // Junctions come before cities in the list.
+  const firstCity = suggestions.findIndex((candidate) => candidate.kind === 'city');
+  const lastJunction = suggestions.map((candidate) => candidate.kind).lastIndexOf('intersection');
+  if (firstCity >= 0) assert.ok(lastJunction < firstCity);
+});
+
+test('Calabasas High School is a checked extra stop and appears in search', async () => {
+  loadGraph();
+  const school = EXTRA_STOPS.find((candidate) => candidate.name === 'Calabasas High School');
+  assert.ok(school, 'extra stop is listed');
+  assert.ok(school.source.includes('Wikidata Q5018284') && school.source.includes('OpenStreetMap'));
+  assert.ok(school.lat > 34.1 && school.lat < 34.2 && school.lon > -118.7 && school.lon < -118.6);
+  const found = await suggestStops('calabasas high', { network: 'canyons' });
+  assert.ok(found.some((candidate) => candidate.name === 'Calabasas High School'));
+});
+
+test('the Calabasas High School stop routes on the real graph', async () => {
+  loadGraph();
+  const school = EXTRA_STOPS.find((candidate) => candidate.name === 'Calabasas High School')!;
+  const start = PRESET_ROUTES.find((candidate) => candidate.id === 'preset-newbury-calabasas')!.stops[0];
+  const route = await planRoute([start, school], { network: 'all', departAt: '2026-10-19T16:00:00.000Z' });
+  assert.equal(route.legs.length, 1);
+  assert.ok(route.distanceM > 1000);
+});
+
+test('route options: several canyon routes, preferred first, each labeled with its canyon', async () => {
+  loadGraph();
+  const preset = PRESET_ROUTES.find((candidate) => candidate.id === 'preset-newbury-woodland')!;
+  const options = await planRouteOptions(preset.stops, { network: preset.network, departAt: '2026-10-19T16:00:00.000Z' });
+  assert.ok(options.length >= 2, `expected alternatives, got ${options.length}`);
+  for (const option of options) {
+    assert.match(option.label, /^via .+$/);
+    assert.equal(option.route.stops.length, preset.stops.length);
+    assert.equal(option.route.highwayShare, 0);
+  }
+  assert.equal(new Set(options.map((option) => option.label)).size, options.length, 'labels are distinct');
+  assert.deepEqual(options.map((option) => option.route.alternative), options.map((_, index) => index));
+});
+
+test('each leg lists its roads, with a difficulty per road that adds up to the leg distance', async () => {
+  loadGraph();
+  const preset = PRESET_ROUTES.find((candidate) => candidate.id === 'preset-newbury-woodland')!;
+  const [preferred] = await planRouteOptions(preset.stops, { network: preset.network, departAt: '2026-10-19T16:00:00.000Z' });
+  for (const leg of preferred.route.legs) {
+    assert.ok(leg.segments && leg.segments.length > 0, `leg to ${leg.to.name} has no road segments`);
+    const total = leg.segments!.reduce((sum, segment) => sum + segment.distanceM, 0);
+    assert.ok(Math.abs(total - leg.distanceM) < leg.distanceM * 0.005, `segments add to ${total}, leg is ${leg.distanceM}`);
+    for (const segment of leg.segments!) assert.ok(DIFFICULTY_META[segment.difficulty], `unknown difficulty ${segment.difficulty}`);
+  }
+});
+
+test('the main road label names the road with the most distance', () => {
+  const step = (roadName: string, distanceM: number) => ({
+    kind: 'straight' as const,
+    roadName,
+    lon: 0,
+    lat: 0,
+    distanceM,
+    durationS: 0,
+    instruction: '',
+  });
+  const route = {
+    stops: [],
+    legs: [
+      { from: stop('a', 0, 0), to: stop('b', 0, 0), distanceM: 0, durationS: 0, difficulty: 'easy' as const, geometry: [], steps: [step('Lynn Rd', 900), step('Potrero Rd', 300)] },
+      { from: stop('b', 0, 0), to: stop('c', 0, 0), distanceM: 0, durationS: 0, difficulty: 'easy' as const, geometry: [], steps: [step('Lynn Rd', 400), step('', 50)] },
+    ],
+    distanceM: 0,
+    durationS: 0,
+    difficulty: 'easy' as const,
+    geometry: [],
+    departAt: '',
+    arriveAt: '',
+    warnings: [],
+  };
+  assert.equal(mainRoadLabel(route), 'via Lynn Rd');
+  assert.equal(mainRoadLabel({ ...route, legs: [] }), 'Canyon route');
 });

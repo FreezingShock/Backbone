@@ -38,6 +38,17 @@ export function RouteSummary({ route }: { route: Route }) {
                 <p className="mt-1 pl-1 font-mono text-[10px] tracking-wider text-ink-3 uppercase">
                   Arrive {stopLetter(index + 1)} at {formatClock(arriveAt)}
                 </p>
+                {leg.segments && leg.segments.length > 0 && (
+                  <ul aria-label={`Roads from ${stopLetter(index)} to ${stopLetter(index + 1)}`} className="mt-2 flex flex-col gap-1 pl-1">
+                    {leg.segments.map((segment, segmentIndex) => (
+                      <li key={segmentIndex} className="flex items-center gap-2 font-mono text-[11px] text-ink-2">
+                        <span className="min-w-0 flex-1 truncate">{segment.roadName || 'Unnamed road'}</span>
+                        <span className="shrink-0 tabular-nums">{formatDistance(segment.distanceM)}</span>
+                        <DifficultyChip difficulty={segment.difficulty} />
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 <ol className="mt-2 flex flex-col gap-1.5 pl-1">
                   {leg.steps.map((step, stepIndex) => (
                     <li key={stepIndex} className="flex items-baseline gap-2 text-[13px] text-ink">

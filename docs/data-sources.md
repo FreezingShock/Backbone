@@ -60,7 +60,7 @@ Stop sign and signal data, checked 2026-10-19:
 
 Engine defaults, chosen here and stated in the code:
 - Canyon routes avoid highway-class roads (US 101, PCH, freeway ramps). A leg uses one only when nothing else connects its stops, and the route then carries a warning.
-- ETA is driving time over the graph, plus 0 to 4 s for each turn (under 45° free, under 120° 2 s, sharper 4 s), plus control delays. Turns are not part of the search, only the timing.
+- ETA is driving time over the graph, plus 0 to 4 s for each turn (under 45° free, under 120° 2 s, sharper 4 s), plus control delays. Turns are not part of the search, only the timing. Route choice leaves out the stop and signal delays, so a stop sign never sends a canyon route onto a freeway.
 - Difficulty is a 0 to 100 score per road piece: curvature (up to 50), class (up to 12), narrow road (8), unpaved (15), grade (up to 20, unused for now). Bands: easy under 15, intermediate under 30, medium under 45, hard under 60, difficult above. Colors are Minecraft chat colors: green, yellow, gold, red, dark red. A leg or route rolls up as its length-weighted mean.
 - Steps: a name change always gets a step, and a turn under 25° on a new road reads as "continue". Along one road, only turns of 45° or more get a step.
 

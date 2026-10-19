@@ -7,6 +7,7 @@ import { Chip } from '../ui/primitives';
 import { customStop } from './engine';
 import { formatClock, fromLocalInput, toLocalInput } from './format';
 import { PlannerOverlay } from './PlannerOverlay';
+import { RouteOptions } from './RouteOptions';
 import { defaultRouteName, INITIAL_PLAN, planReducer, type DepartState } from './planState';
 import { PRESET_ROUTES } from './presets';
 import { RouteSummary } from './RouteSummary';
@@ -24,13 +25,21 @@ export interface RoutePlannerProps {
   onPlay: (route: Route) => void;
 }
 
-const NETWORK_LABEL: Record<Network, string> = { canyons: 'Canyon roads', all: 'All roads' };
+const NETWORK_LABEL: Record<Network, string> = { canyons: 'Prefer canyons, avoid freeways', all: 'All roads' };
 
 export function RoutePlanner({ viewer, look, onPlay }: RoutePlannerProps) {
   const [open, setOpen] = useState(false);
   const [pickMode, setPickMode] = useState(false);
   const [plan, dispatch] = useReducer(planReducer, INITIAL_PLAN);
   const result = useRoutePlan(plan);
+  const [selectedOption, setSelectedOption] = useState(0);
+  // A new plan starts from the preferred route again.
+  useEffect(() => setSelectedOption(0), [result.options]);
+  const chosenIndex = Math.min(selectedOption, Math.max(result.options.length - 1, 0));
+  const alternates = useMemo(
+    () => result.options.filter((_, index) => index !== chosenIndex).map((option) => option.route),
+    [result.options, chosenIndex],
+  );
   const store: RouteStore = useMemo(() => createLocalRouteStore(), []);
   const [saved, setSaved] = useState<SavedRoute[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -58,7 +67,8 @@ export function RoutePlanner({ viewer, look, onPlay }: RoutePlannerProps) {
 
   const addStop = useCallback((stop: Stop) => dispatch({ type: 'add', stop }), []);
   const pinStop = useCallback((lon: number, lat: number) => dispatch({ type: 'add', stop: customStop(lon, lat) }), []);
-  const route: Route | null = result.route;
+  const route: Route | null = result.options[chosenIndex]?.route ?? null;
+  const lastStop = plan.stops.at(-1);
 
   const setDepart = (depart: DepartState) => {
     setDepartDraft(null);
@@ -130,6 +140,7 @@ export function RoutePlanner({ viewer, look, onPlay }: RoutePlannerProps) {
         look={look}
         stops={plan.stops}
         route={route}
+        alternates={alternates}
         pickMode={pickMode}
         onPickStop={pinStop}
       />
@@ -159,7 +170,7 @@ export function RoutePlanner({ viewer, look, onPlay }: RoutePlannerProps) {
         </header>
 
         <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-3">
-          <div role="group" aria-label="Roads to use" className="flex gap-1.5">
+          <div role="group" aria-label="Roads to use" className="flex flex-wrap gap-1.5">
             {(Object.keys(NETWORK_LABEL) as Network[]).map((network) => (
               <Chip
                 key={network}
@@ -173,6 +184,7 @@ export function RoutePlanner({ viewer, look, onPlay }: RoutePlannerProps) {
 
           <StopSearch
             network={plan.network}
+            near={lastStop ? { lon: lastStop.lon, lat: lastStop.lat } : undefined}
             placeholder={plan.stops.length === 0 ? 'Start: a place, a junction, a town' : 'Add a stop'}
             onPick={addStop}
           />
@@ -194,6 +206,9 @@ export function RoutePlanner({ viewer, look, onPlay }: RoutePlannerProps) {
           )}
           {result.loading && <p className="font-mono text-[12px] text-ink-2">Planning…</p>}
 
+          {result.options.length > 1 && (
+            <RouteOptions options={result.options} selected={chosenIndex} onSelect={setSelectedOption} />
+          )}
           {route && <RouteSummary route={route} />}
           {route?.warnings.map((warning) => (
             <p key={warning} className="font-mono text-[11px] text-ink-3">
