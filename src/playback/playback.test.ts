@@ -122,9 +122,10 @@ test('nearest point on the track gives the distance along it', () => {
 
 test('steps are placed in travel order and the current step follows the marker', () => {
   const track = buildTrack(twoLegRoute());
+  // Steps come from the legs in the order of travel, and placeSteps relies on that.
   const steps: Step[] = [
-    { kind: 'turn-right', roadName: 'North', lon: -118.5, lat: 34.21, distanceM: 0, durationS: 0, instruction: 'b' },
     { kind: 'depart', roadName: 'East', lon: -118.52, lat: 34.2, distanceM: 0, durationS: 0, instruction: 'a' },
+    { kind: 'turn-right', roadName: 'North', lon: -118.5, lat: 34.21, distanceM: 0, durationS: 0, instruction: 'b' },
   ];
   const placed = placeSteps(track, steps);
   assert.equal(placed[0].step.kind, 'depart');
@@ -132,6 +133,46 @@ test('steps are placed in travel order and the current step follows the marker',
   assert.equal(currentStepIndex(placed, -1), -1);
   assert.equal(currentStepIndex(placed, placed[0].meters), 0);
   assert.equal(currentStepIndex(placed, track.totalM), 1);
+});
+
+test('steps on a route that comes back over its own road stay in order, the arrival at the start lands at the end', () => {
+  // Out and back: east from the start to a turn, then west along the same road to end where the route began.
+  const start: LonLat = [-118.52, 34.2];
+  const turnPoint: LonLat = [-118.5, 34.2];
+  const leg: Leg = {
+    from: stop('A', start[0], start[1]),
+    to: stop('A again', start[0], start[1]),
+    distanceM: 0,
+    durationS: 240,
+    difficulty: 'easy',
+    geometry: [start, turnPoint, start],
+    steps: [],
+  };
+  const route: Route = {
+    stops: [leg.from, leg.to],
+    legs: [leg],
+    distanceM: 0,
+    durationS: 240,
+    difficulty: 'easy',
+    geometry: [],
+    departAt: '2026-10-19T00:00:00.000Z',
+    arriveAt: '2026-10-19T00:04:00.000Z',
+    warnings: [],
+  };
+  const track = buildTrack(route);
+  const steps: Step[] = [
+    { kind: 'depart', roadName: 'East', lon: start[0], lat: start[1], distanceM: 0, durationS: 0, instruction: 'a' },
+    { kind: 'u-turn', roadName: 'East', lon: turnPoint[0], lat: turnPoint[1], distanceM: 0, durationS: 0, instruction: 'b' },
+    { kind: 'arrive', roadName: 'East', lon: start[0], lat: start[1], distanceM: 0, durationS: 0, instruction: 'c' },
+  ];
+  const placed = placeSteps(track, steps);
+  assert.deepEqual(
+    placed.map((item) => item.step.kind),
+    ['depart', 'u-turn', 'arrive'],
+  );
+  near(placed[0].meters, 0, 1);
+  near(placed[1].meters, metersBetween(start, turnPoint), 1);
+  near(placed[2].meters, track.totalM, 1);
 });
 
 test('highlight slice covers the requested stretch with interpolated ends', () => {
