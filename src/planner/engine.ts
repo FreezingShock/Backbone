@@ -85,6 +85,41 @@ export async function suggestStops(
   return [...fromEngine, ...extras].slice(0, limit);
 }
 
+/** One route the rider can choose. `label` names the main road, such as "via Lynn Rd". */
+export interface RouteOption {
+  route: Route;
+  label: string;
+}
+
+/**
+ * Route options for the chooser, preferred first. Today the engine returns one route, so this is a list of one.
+ * When the routing engine's planRoutes lands, this returns its alternatives, each with the road it goes through.
+ */
+export async function planRouteOptions(stops: readonly Stop[], request: PlanRequest): Promise<RouteOption[]> {
+  const route = await planRoute(stops, request);
+  return [{ route, label: mainRoadLabel(route) }];
+}
+
+/** The road the route spends the most distance on, as "via X". Falls back to "Canyon route" with no named road. */
+export function mainRoadLabel(route: Route): string {
+  const meters = new Map<string, number>();
+  for (const leg of route.legs) {
+    for (const step of leg.steps) {
+      if (!step.roadName) continue;
+      meters.set(step.roadName, (meters.get(step.roadName) ?? 0) + step.distanceM);
+    }
+  }
+  let best: string | null = null;
+  let bestMeters = 0;
+  for (const [name, total] of meters) {
+    if (total > bestMeters) {
+      best = name;
+      bestMeters = total;
+    }
+  }
+  return best ? `via ${best}` : 'Canyon route';
+}
+
 /** A stop from a map click. The engine snaps it to the nearest junction when routing. */
 export function customStop(lon: number, lat: number): Stop {
   return engineCustomStop(lon, lat, 'Dropped pin');

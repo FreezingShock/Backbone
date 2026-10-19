@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { setRoutingGraph } from '../routing';
 import type { GraphFile } from '../routing/graphFile';
 import { DIFFICULTY_META, harder } from './difficulty';
-import { customStop, planRoute, suggestStops } from './engine';
+import { customStop, mainRoadLabel, planRoute, planRouteOptions, suggestStops } from './engine';
 import { EXTRA_STOPS } from './extraStops';
 import { metersBetween } from '../routing/geo';
 import { formatClock, formatDistance, formatDuration, fromLocalInput, stopLetter, toLocalInput } from './format';
@@ -198,4 +198,41 @@ test('the Calabasas High School stop routes on the real graph', async () => {
   const route = await planRoute([start, school], { network: 'all', departAt: '2026-10-19T16:00:00.000Z' });
   assert.equal(route.legs.length, 1);
   assert.ok(route.distanceM > 1000);
+});
+
+test('route options: one preferred route today, labeled with its main road', async () => {
+  loadGraph();
+  const preset = PRESET_ROUTES.find((candidate) => candidate.id === 'preset-newbury-woodland')!;
+  const options = await planRouteOptions(preset.stops, { network: preset.network, departAt: '2026-10-19T16:00:00.000Z' });
+  assert.equal(options.length, 1);
+  assert.match(options[0].label, /^(via .+|Canyon route)$/);
+  assert.equal(options[0].route.stops.length, preset.stops.length);
+});
+
+test('the main road label names the road with the most distance', () => {
+  const step = (roadName: string, distanceM: number) => ({
+    kind: 'straight' as const,
+    roadName,
+    lon: 0,
+    lat: 0,
+    distanceM,
+    durationS: 0,
+    instruction: '',
+  });
+  const route = {
+    stops: [],
+    legs: [
+      { from: stop('a', 0, 0), to: stop('b', 0, 0), distanceM: 0, durationS: 0, difficulty: 'easy' as const, geometry: [], steps: [step('Lynn Rd', 900), step('Potrero Rd', 300)] },
+      { from: stop('b', 0, 0), to: stop('c', 0, 0), distanceM: 0, durationS: 0, difficulty: 'easy' as const, geometry: [], steps: [step('Lynn Rd', 400), step('', 50)] },
+    ],
+    distanceM: 0,
+    durationS: 0,
+    difficulty: 'easy' as const,
+    geometry: [],
+    departAt: '',
+    arriveAt: '',
+    warnings: [],
+  };
+  assert.equal(mainRoadLabel(route), 'via Lynn Rd');
+  assert.equal(mainRoadLabel({ ...route, legs: [] }), 'Canyon route');
 });
