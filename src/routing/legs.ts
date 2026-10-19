@@ -45,23 +45,47 @@ function instructionFor(kind: StepKind, road: string): string {
   }
 }
 
+/** One road piece as the segments need it. */
+interface SegmentPiece {
+  edge: number;
+  name: string;
+  cls: Segment['cls'];
+  meters: number;
+  seconds: number;
+  curvature: number;
+  mountain: number;
+  grade: number | null;
+}
+
 /** Groups road pieces into runs of one named road and crossing, and rates each run by its length-weighted score. */
-function segmentsOf(
-  pieces: { edge: number; name: string; cls: Segment['cls']; meters: number; seconds: number; curvature: number }[],
-  parts: Part[],
-  crossingOf: (edge: number) => string,
-): Segment[] {
-  type Run = { roadName: string; crossing: string; cls: Segment['cls']; meters: number; seconds: number; curve: number; score: number };
+function segmentsOf(pieces: SegmentPiece[], parts: Part[], crossingOf: (edge: number) => string): Segment[] {
+  type Run = {
+    roadName: string;
+    crossing: string;
+    cls: Segment['cls'];
+    meters: number;
+    seconds: number;
+    curve: number;
+    score: number;
+    mountain: number;
+    gradeMeters: number;
+    gradeSum: number;
+  };
   const runs: Run[] = [];
   pieces.forEach((piece, i) => {
     const crossing = crossingOf(piece.edge);
     const last = runs[runs.length - 1];
     const part = parts[i];
+    const gradeMeters = piece.grade === null ? 0 : piece.meters;
+    const gradeSum = piece.grade === null ? 0 : piece.grade * piece.meters;
     if (last && last.roadName === piece.name && last.crossing === crossing && last.cls === piece.cls) {
       last.meters += piece.meters;
       last.seconds += piece.seconds;
       last.curve += piece.curvature * piece.meters;
       last.score += part.score * piece.meters;
+      last.mountain += piece.mountain * piece.meters;
+      last.gradeMeters += gradeMeters;
+      last.gradeSum += gradeSum;
       return;
     }
     runs.push({
@@ -72,6 +96,9 @@ function segmentsOf(
       seconds: piece.seconds,
       curve: piece.curvature * piece.meters,
       score: part.score * piece.meters,
+      mountain: piece.mountain * piece.meters,
+      gradeMeters,
+      gradeSum,
     });
   });
   return runs.map((run) => {
@@ -86,8 +113,9 @@ function segmentsOf(
       difficulty: difficultyFromScore(score),
       curvature: Math.min(1, curvatureDegPerKm / 100),
       curvatureDegPerKm: Math.round(curvatureDegPerKm * 10) / 10,
-      gradePct: null,
+      gradePct: run.gradeMeters > 0 ? Math.round((run.gradeSum / run.gradeMeters) * 10) / 10 : null,
       score: Math.round(score * 10) / 10,
+      mountainScore: run.meters > 0 ? Math.round(run.mountain / run.meters) : 0,
     };
   });
 }
@@ -136,6 +164,8 @@ export function buildLeg(graph: RoutingGraph, input: LegInput): BuiltLeg {
       name: graph.nameOf(edge),
       cls: graph.classOf(edge),
       highway: graph.highwayOf(edge),
+      mountain: graph.edgeMountain[edge],
+      grade: graph.gradeOf(edge),
     };
   });
   pushPoint([to.lon, to.lat]);

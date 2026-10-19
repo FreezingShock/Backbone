@@ -27,11 +27,11 @@ export interface PlanRequest {
 }
 
 /**
- * Canyon roads: no highways and no local streets. The engine has no crossings-only switch, so arterials and
- * collectors still count. All roads: no highways, local streets included.
+ * Canyon roads: mountain roads are preferred, valley roads beside the 101 cost the most, and no local streets.
+ * All roads: fastest by road class, no highways, local streets included.
  */
 function optionsFor(network: Network, departAt?: string): PlanOptions {
-  return { avoidHighways: true, avoidLocal: network === 'canyons', departAt };
+  return { avoidHighways: true, avoidLocal: network === 'canyons', mountainRoads: network === 'canyons', departAt };
 }
 
 export async function planRoute(stops: readonly Stop[], request: PlanRequest): Promise<Route> {
@@ -102,8 +102,12 @@ export async function planRouteOptions(stops: readonly Stop[], request: PlanRequ
   return routes.map((route) => ({ route, label: routeLabel(route) }));
 }
 
-/** The canyon a route goes through, as "via X". Falls back to "Canyon route" when no canyon is named. */
+/**
+ * The route's canyons in order, with the key turn, such as "via Topanga, then Mulholland Hwy west" (the engine's
+ * summary). Falls back to the main canyon, then to "Canyon route".
+ */
 export function routeLabel(route: Route): string {
+  if (route.summary) return route.summary;
   return route.label && route.label !== 'Local roads' ? `via ${route.label}` : 'Canyon route';
 }
 

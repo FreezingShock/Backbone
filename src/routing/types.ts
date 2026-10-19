@@ -70,10 +70,12 @@ export interface Segment {
   curvature: number;
   /** Degrees of heading change per km, length-weighted. */
   curvatureDegPerKm: number;
-  /** Percent grade. null until the graph carries elevation, so the UI can say "not measured". */
+  /** Mean steepness in percent, length-weighted, always positive. null when no elevation was sampled ("not measured"). */
   gradePct: number | null;
   /** The 0 to 100 difficulty score the band comes from. */
   score: number;
+  /** Length-weighted mountain score of the run, 0 (valley) to 100 (high, winding canyon). See mountain.ts. */
+  mountainScore: number;
 }
 
 export interface Leg {
@@ -107,6 +109,13 @@ export interface Route {
   alternative?: number;
   /** Share of the distance (0 to 1) on highway-class roads. 0 means the route never touches a freeway. */
   highwayShare?: number;
+  /** Share of the distance (0 to 1) on mountain roads: named canyon crossings or road pieces scoring 50 or more. */
+  mountainShare?: number;
+  /**
+   * Short description of the canyons the route takes, in order, with the key turn: "via Topanga, then Mulholland Hwy west".
+   * Empty when the route uses no named canyon of at least 1 km.
+   */
+  summary?: string;
 }
 
 export interface PlanOptions {
@@ -119,8 +128,13 @@ export interface PlanOptions {
   avoidHighways?: boolean;
   /** Default false. Local streets (service roads, tracks, neighborhood streets) are priced at three times their time, below a freeway. */
   avoidLocal?: boolean;
-  /** planRoutes only: how many distinct canyon alternatives to return, 1 to 3. Default 3. */
+  /** planRoutes only: how many distinct canyon routes to return, 1 to 6. Default 4. */
   maxRoutes?: number;
+  /**
+   * Default false. Canyon mode prices roads by their mountain score: mountain roads are cheap, valley roads beside the
+   * 101 cost the most, and freeways stay at four times their drive time. Off keeps the class-based canyon pricing.
+   */
+  mountainRoads?: boolean;
 }
 
 export interface SuggestNear {

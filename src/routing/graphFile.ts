@@ -5,15 +5,18 @@ import { ROAD_CLASS_ORDER } from './roadClasses';
  * The routing graph file, written by scripts/build-routing-graph.ts into public/data/routing-graph.json. The app
  * fetches it once and builds the search arrays from it. Keep this format in step with buildGraph.ts and graph.ts.
  */
-export const GRAPH_FILE_VERSION = 1;
+export const GRAPH_FILE_VERSION = 2;
 
 /**
  * One undirected road piece between two graph nodes:
- * [fromNode, toNode, encodedPolyline, lengthM, classIndex, highwayIndex, nameIndex, crossingIndex, curvature].
+ * [fromNode, toNode, encodedPolyline, lengthM, classIndex, highwayIndex, nameIndex, crossingIndex, curvature,
+ *  mountain, corridor, gradeTenths].
  * The polyline runs from fromNode to toNode. Indexes point into the `highways`, `names` and `crossings` tables;
- * index 0 is the empty string. Curvature is whole degrees per km.
+ * index 0 is the empty string. Curvature is whole degrees per km. Mountain is the 0 to 100 score from mountain.ts.
+ * Corridor is 1 for a valley road beside the 101, else 0. GradeTenths is the steepness in tenths of a percent,
+ * or -1 when no elevation was sampled.
  */
-export type EdgeRow = [number, number, string, number, number, number, number, number, number];
+export type EdgeRow = [number, number, string, number, number, number, number, number, number, number, number, number];
 
 /** A control on a node: [node, kind, label]. */
 export type ControlRow = [number, ControlKind, string];
