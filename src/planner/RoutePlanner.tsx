@@ -7,6 +7,7 @@ import { Chip } from '../ui/primitives';
 import { customStop } from './engine';
 import { formatClock, fromLocalInput, toLocalInput } from './format';
 import { PlannerOverlay } from './PlannerOverlay';
+import { RouteOptions } from './RouteOptions';
 import { defaultRouteName, INITIAL_PLAN, planReducer, type DepartState } from './planState';
 import { PRESET_ROUTES } from './presets';
 import { RouteSummary } from './RouteSummary';
@@ -31,6 +32,14 @@ export function RoutePlanner({ viewer, look, onPlay }: RoutePlannerProps) {
   const [pickMode, setPickMode] = useState(false);
   const [plan, dispatch] = useReducer(planReducer, INITIAL_PLAN);
   const result = useRoutePlan(plan);
+  const [selectedOption, setSelectedOption] = useState(0);
+  // A new plan starts from the preferred route again.
+  useEffect(() => setSelectedOption(0), [result.options]);
+  const chosenIndex = Math.min(selectedOption, Math.max(result.options.length - 1, 0));
+  const alternates = useMemo(
+    () => result.options.filter((_, index) => index !== chosenIndex).map((option) => option.route),
+    [result.options, chosenIndex],
+  );
   const store: RouteStore = useMemo(() => createLocalRouteStore(), []);
   const [saved, setSaved] = useState<SavedRoute[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -58,7 +67,7 @@ export function RoutePlanner({ viewer, look, onPlay }: RoutePlannerProps) {
 
   const addStop = useCallback((stop: Stop) => dispatch({ type: 'add', stop }), []);
   const pinStop = useCallback((lon: number, lat: number) => dispatch({ type: 'add', stop: customStop(lon, lat) }), []);
-  const route: Route | null = result.route;
+  const route: Route | null = result.options[chosenIndex]?.route ?? null;
   const lastStop = plan.stops.at(-1);
 
   const setDepart = (depart: DepartState) => {
@@ -131,6 +140,7 @@ export function RoutePlanner({ viewer, look, onPlay }: RoutePlannerProps) {
         look={look}
         stops={plan.stops}
         route={route}
+        alternates={alternates}
         pickMode={pickMode}
         onPickStop={pinStop}
       />
@@ -196,6 +206,9 @@ export function RoutePlanner({ viewer, look, onPlay }: RoutePlannerProps) {
           )}
           {result.loading && <p className="font-mono text-[12px] text-ink-2">Planning…</p>}
 
+          {result.options.length > 1 && (
+            <RouteOptions options={result.options} selected={chosenIndex} onSelect={setSelectedOption} />
+          )}
           {route && <RouteSummary route={route} />}
           {route?.warnings.map((warning) => (
             <p key={warning} className="font-mono text-[11px] text-ink-3">

@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
-import { planRoute } from './engine';
+import { planRouteOptions, type RouteOption } from './engine';
 import type { PlanState } from './planState';
-import type { Route } from './types';
 
 export interface PlanResult {
-  route: Route | null;
+  /** Preferred route first. Empty until there are two stops and a plan has come back. */
+  options: RouteOption[];
   error: string | null;
   loading: boolean;
 }
 
-const IDLE: PlanResult = { route: null, error: null, loading: false };
+const IDLE: PlanResult = { options: [], error: null, loading: false };
 /** Waits this long after the last edit, so dragging a stop does not plan every frame. */
 const SETTLE_MS = 120;
 
@@ -33,12 +33,12 @@ export function useRoutePlan(state: PlanState): PlanResult {
     setResult((previous) => ({ ...previous, loading: true, error: null }));
     const timer = window.setTimeout(() => {
       const departAt = state.depart.mode === 'at' ? state.depart.iso : new Date().toISOString();
-      planRoute(state.stops, { network: state.network, departAt })
-        .then((route) => {
-          if (!cancelled) setResult({ route, error: null, loading: false });
+      planRouteOptions(state.stops, { network: state.network, departAt })
+        .then((options) => {
+          if (!cancelled) setResult({ options, error: null, loading: false });
         })
         .catch((error: unknown) => {
-          if (!cancelled) setResult({ route: null, error: messageOf(error), loading: false });
+          if (!cancelled) setResult({ options: [], error: messageOf(error), loading: false });
         });
     }, SETTLE_MS);
     return () => {
