@@ -14,6 +14,7 @@ import { LayerPanel } from './ui/LayerPanel';
 import { StylePanel } from './ui/StylePanel';
 import { TitleCartouche } from './ui/TitleCartouche';
 import { Toolbar } from './ui/Toolbar';
+import { NavigationHUD, PlaybackControls, SampleRouteButton, usePlaybackController } from './playback';
 
 function defaultVisibility(): Record<string, boolean> {
   return Object.fromEntries(mapLayers.map((layer) => [layer.id, layer.defaultVisible]));
@@ -30,6 +31,7 @@ export default function App() {
   const [status, setStatus] = useState<RuntimeStatus>({ imagery: 'loading', terrain: 'loading' });
   const [viewer, setViewer] = useState<Cesium.Viewer | null>(null);
   const look = useMemo(() => mapLook(theme, mapStyle), [theme, mapStyle]);
+  const playback = usePlaybackController(viewer, look);
 
   const onStatus = useCallback(
     (next: Partial<RuntimeStatus>) => setStatus((prev) => ({ ...prev, ...next })),
@@ -67,9 +69,12 @@ export default function App() {
         onGoTo={goTo}
         onPick={pick}
       />
+      <NavigationHUD controller={playback} />
+      <PlaybackControls controller={playback} />
       <PlaceCard onFlyTo={goTo} />
 
       <aside className="absolute top-4 right-4 bottom-36 flex w-64 flex-col gap-3">
+        <SampleRouteButton controller={playback} />
         <StylePanel
           mapStyle={mapStyle}
           onMapStyle={setMapStyle}
