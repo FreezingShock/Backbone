@@ -62,11 +62,18 @@ class MinHeap {
 }
 
 /**
- * A* over the road graph, minimizing driving time. `allow` decides which edges may be used, which is how
- * highways are kept out. The heuristic is straight-line distance at the fastest speed the graph allows, so it
- * never overestimates and the first path found to the goal is the fastest.
+ * A* over the road graph, minimizing weighted driving time. `allow` decides which edges may be used. `weights`
+ * multiplies each edge's drive time (default 1), which is how canyon roads are preferred and freeways priced. Every
+ * weight must be at least 0.8, so the heuristic (straight-line distance at the fastest speed the graph allows)
+ * still never overestimates, and the first path found to the goal is the cheapest.
  */
-export function findPath(graph: RoutingGraph, start: number, goal: number, allow: (edge: number) => boolean): PathResult | null {
+export function findPath(
+  graph: RoutingGraph,
+  start: number,
+  goal: number,
+  allow: (edge: number) => boolean,
+  weights?: Float64Array,
+): PathResult | null {
   if (start === goal) return { refs: [], seconds: 0, meters: 0 };
 
   const goalLon = graph.lon[goal];
@@ -92,7 +99,7 @@ export function findPath(graph: RoutingGraph, start: number, goal: number, allow
       const edge = ref >> 1;
       if (!allow(edge)) continue;
       const next = graph.endOf(ref);
-      const pieceSeconds = graph.edgeMeters[edge] / graph.edgeSpeedMs[edge];
+      const pieceSeconds = (graph.edgeMeters[edge] / graph.edgeSpeedMs[edge]) * (weights ? weights[edge] : 1);
       const delay = graph.controls.get(next);
       const candidate = g + pieceSeconds + (delay ? controlDelayS(delay.kind) : 0);
       if (candidate < cost[next]) {

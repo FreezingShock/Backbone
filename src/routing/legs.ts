@@ -1,7 +1,7 @@
 import { bearingDeg, turnBetween } from './geo';
 import type { RoutingGraph } from './graph';
-import { difficultyScore, rollUpDifficulty } from './difficulty';
-import type { Leg, LonLat, Stop, Step, StepKind } from './types';
+import { difficultyFromScore, difficultyScore, rollUpDifficulty } from './difficulty';
+import type { Leg, LonLat, Segment, Stop, Step, StepKind } from './types';
 import { controlDelayS, turnDelayS } from './speed';
 
 /** Turns smaller than this are going straight on, even when the road name changes. */
@@ -45,6 +45,53 @@ function instructionFor(kind: StepKind, road: string): string {
   }
 }
 
+/** Groups road pieces into runs of one named road and crossing, and rates each run by its length-weighted score. */
+function segmentsOf(
+  pieces: { edge: number; name: string; cls: Segment['cls']; meters: number; seconds: number; curvature: number }[],
+  parts: Part[],
+  crossingOf: (edge: number) => string,
+): Segment[] {
+  type Run = { roadName: string; crossing: string; cls: Segment['cls']; meters: number; seconds: number; curve: number; score: number };
+  const runs: Run[] = [];
+  pieces.forEach((piece, i) => {
+    const crossing = crossingOf(piece.edge);
+    const last = runs[runs.length - 1];
+    const part = parts[i];
+    if (last && last.roadName === piece.name && last.crossing === crossing && last.cls === piece.cls) {
+      last.meters += piece.meters;
+      last.seconds += piece.seconds;
+      last.curve += piece.curvature * piece.meters;
+      last.score += part.score * piece.meters;
+      return;
+    }
+    runs.push({
+      roadName: piece.name,
+      crossing,
+      cls: piece.cls,
+      meters: piece.meters,
+      seconds: piece.seconds,
+      curve: piece.curvature * piece.meters,
+      score: part.score * piece.meters,
+    });
+  });
+  return runs.map((run) => {
+    const curvatureDegPerKm = run.meters > 0 ? run.curve / run.meters : 0;
+    const score = run.meters > 0 ? run.score / run.meters : 0;
+    return {
+      roadName: run.roadName,
+      crossing: run.crossing,
+      cls: run.cls,
+      distanceM: Math.round(run.meters),
+      durationS: Math.round(run.seconds),
+      difficulty: difficultyFromScore(score),
+      curvature: Math.min(1, curvatureDegPerKm / 100),
+      curvatureDegPerKm: Math.round(curvatureDegPerKm * 10) / 10,
+      gradePct: null,
+      score: Math.round(score * 10) / 10,
+    };
+  });
+}
+
 export interface LegInput {
   from: Stop;
   to: Stop;
@@ -85,6 +132,7 @@ export function buildLeg(graph: RoutingGraph, input: LegInput): BuiltLeg {
       points,
       meters: graph.edgeMeters[edge],
       seconds: graph.edgeMeters[edge] / graph.edgeSpeedMs[edge],
+      curvature: graph.edgeCurvature[edge],
       name: graph.nameOf(edge),
       cls: graph.classOf(edge),
       highway: graph.highwayOf(edge),
@@ -101,6 +149,8 @@ export function buildLeg(graph: RoutingGraph, input: LegInput): BuiltLeg {
       unpaved: piece.highway === 'track',
     }),
   }));
+
+  const segments = segmentsOf(pieces, parts, (edge) => graph.crossingOf(edge));
 
   // Walk the pieces, collecting the junction events and the running distance and time.
   const firstRoad = pieces[0]?.name ?? '';
@@ -202,6 +252,7 @@ export function buildLeg(graph: RoutingGraph, input: LegInput): BuiltLeg {
       difficulty: rolled.difficulty,
       geometry,
       steps,
+      segments,
     },
     parts,
   };
