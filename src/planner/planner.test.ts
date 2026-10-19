@@ -214,6 +214,18 @@ test('route options: several canyon routes, preferred first, each labeled with i
   assert.deepEqual(options.map((option) => option.route.alternative), options.map((_, index) => index));
 });
 
+test('each leg lists its roads, with a difficulty per road that adds up to the leg distance', async () => {
+  loadGraph();
+  const preset = PRESET_ROUTES.find((candidate) => candidate.id === 'preset-newbury-woodland')!;
+  const [preferred] = await planRouteOptions(preset.stops, { network: preset.network, departAt: '2026-10-19T16:00:00.000Z' });
+  for (const leg of preferred.route.legs) {
+    assert.ok(leg.segments && leg.segments.length > 0, `leg to ${leg.to.name} has no road segments`);
+    const total = leg.segments!.reduce((sum, segment) => sum + segment.distanceM, 0);
+    assert.ok(Math.abs(total - leg.distanceM) < leg.distanceM * 0.005, `segments add to ${total}, leg is ${leg.distanceM}`);
+    for (const segment of leg.segments!) assert.ok(DIFFICULTY_META[segment.difficulty], `unknown difficulty ${segment.difficulty}`);
+  }
+});
+
 test('the main road label names the road with the most distance', () => {
   const step = (roadName: string, distanceM: number) => ({
     kind: 'straight' as const,
