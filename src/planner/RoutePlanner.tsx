@@ -59,6 +59,7 @@ export function RoutePlanner({ viewer, look, onPlay }: RoutePlannerProps) {
   const addStop = useCallback((stop: Stop) => dispatch({ type: 'add', stop }), []);
   const pinStop = useCallback((lon: number, lat: number) => dispatch({ type: 'add', stop: customStop(lon, lat) }), []);
   const route: Route | null = result.route;
+  const lastStop = plan.stops.at(-1);
 
   const setDepart = (depart: DepartState) => {
     setDepartDraft(null);
@@ -173,6 +174,7 @@ export function RoutePlanner({ viewer, look, onPlay }: RoutePlannerProps) {
 
           <StopSearch
             network={plan.network}
+            near={lastStop ? { lon: lastStop.lon, lat: lastStop.lat } : undefined}
             placeholder={plan.stops.length === 0 ? 'Start: a place, a junction, a town' : 'Add a stop'}
             onPick={addStop}
           />

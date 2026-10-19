@@ -6,6 +6,8 @@ import { setRoutingGraph } from '../routing';
 import type { GraphFile } from '../routing/graphFile';
 import { DIFFICULTY_META, harder } from './difficulty';
 import { customStop, planRoute, suggestStops } from './engine';
+import { EXTRA_STOPS } from './extraStops';
+import { metersBetween } from '../routing/geo';
 import { formatClock, formatDistance, formatDuration, fromLocalInput, stopLetter, toLocalInput } from './format';
 import { INITIAL_PLAN, MAX_STOPS, planReducer, defaultRouteName } from './planState';
 import { PRESET_ROUTES } from './presets';
@@ -159,4 +161,41 @@ test('the routing engine suggests junctions and places for the search box', asyn
   loadGraph();
   const suggestions = await suggestStops('newbury', { network: 'canyons' });
   assert.ok(suggestions.some((candidate) => candidate.name === 'Newbury Park'));
+});
+
+test('with no query, suggestions are branch-off junctions near the last stop, then city centers', async () => {
+  loadGraph();
+  const near = { lon: -118.9226, lat: 34.1786 };
+  const suggestions = await suggestStops('', { network: 'canyons', near }, 8);
+  assert.ok(suggestions.length > 0 && suggestions.length <= 8);
+  const junctions = suggestions.filter((candidate) => candidate.kind === 'intersection');
+  assert.ok(junctions.length > 0, 'expected at least one branch-off junction near Newbury Park');
+  for (const junction of junctions) {
+    const meters = metersBetween([near.lon, near.lat], [junction.lon, junction.lat]);
+    assert.ok(meters <= 15000, `${junction.name} is ${Math.round(meters)} m away`);
+    assert.match(junction.name, / & /);
+  }
+  // Junctions come before cities in the list.
+  const firstCity = suggestions.findIndex((candidate) => candidate.kind === 'city');
+  const lastJunction = suggestions.map((candidate) => candidate.kind).lastIndexOf('intersection');
+  if (firstCity >= 0) assert.ok(lastJunction < firstCity);
+});
+
+test('Calabasas High School is a checked extra stop and appears in search', async () => {
+  loadGraph();
+  const school = EXTRA_STOPS.find((candidate) => candidate.name === 'Calabasas High School');
+  assert.ok(school, 'extra stop is listed');
+  assert.ok(school.source.includes('Wikidata Q5018284') && school.source.includes('OpenStreetMap'));
+  assert.ok(school.lat > 34.1 && school.lat < 34.2 && school.lon > -118.7 && school.lon < -118.6);
+  const found = await suggestStops('calabasas high', { network: 'canyons' });
+  assert.ok(found.some((candidate) => candidate.name === 'Calabasas High School'));
+});
+
+test('the Calabasas High School stop routes on the real graph', async () => {
+  loadGraph();
+  const school = EXTRA_STOPS.find((candidate) => candidate.name === 'Calabasas High School')!;
+  const start = PRESET_ROUTES.find((candidate) => candidate.id === 'preset-newbury-calabasas')!.stops[0];
+  const route = await planRoute([start, school], { network: 'all', departAt: '2026-10-19T16:00:00.000Z' });
+  assert.equal(route.legs.length, 1);
+  assert.ok(route.distanceM > 1000);
 });
