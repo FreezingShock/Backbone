@@ -15,6 +15,7 @@ import { StylePanel } from './ui/StylePanel';
 import { TitleCartouche } from './ui/TitleCartouche';
 import { Toolbar } from './ui/Toolbar';
 import { NavigationHUD, PlaybackControls, SampleRouteButton, usePlaybackController } from './playback';
+import { RoutePlanner } from './planner/RoutePlanner';
 
 function defaultVisibility(): Record<string, boolean> {
   return Object.fromEntries(mapLayers.map((layer) => [layer.id, layer.defaultVisible]));
@@ -72,6 +73,7 @@ export default function App() {
       <NavigationHUD controller={playback} />
       <PlaybackControls controller={playback} />
       <PlaceCard onFlyTo={goTo} />
+      <RoutePlanner viewer={viewer} look={look} onPlay={(route) => playback?.start(route)} />
 
       <aside className="absolute top-4 right-4 bottom-36 flex w-64 flex-col gap-3">
         <SampleRouteButton controller={playback} />
