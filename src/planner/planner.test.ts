@@ -200,13 +200,18 @@ test('the Calabasas High School stop routes on the real graph', async () => {
   assert.ok(route.distanceM > 1000);
 });
 
-test('route options: one preferred route today, labeled with its main road', async () => {
+test('route options: several canyon routes, preferred first, each labeled with its canyon', async () => {
   loadGraph();
   const preset = PRESET_ROUTES.find((candidate) => candidate.id === 'preset-newbury-woodland')!;
   const options = await planRouteOptions(preset.stops, { network: preset.network, departAt: '2026-10-19T16:00:00.000Z' });
-  assert.equal(options.length, 1);
-  assert.match(options[0].label, /^(via .+|Canyon route)$/);
-  assert.equal(options[0].route.stops.length, preset.stops.length);
+  assert.ok(options.length >= 2, `expected alternatives, got ${options.length}`);
+  for (const option of options) {
+    assert.match(option.label, /^via .+$/);
+    assert.equal(option.route.stops.length, preset.stops.length);
+    assert.equal(option.route.highwayShare, 0);
+  }
+  assert.equal(new Set(options.map((option) => option.label)).size, options.length, 'labels are distinct');
+  assert.deepEqual(options.map((option) => option.route.alternative), options.map((_, index) => index));
 });
 
 test('the main road label names the road with the most distance', () => {

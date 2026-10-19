@@ -6,6 +6,7 @@ import {
   intersectionId,
   loadRoutingGraph,
   planRoute as enginePlanRoute,
+  planRoutes as enginePlanRoutes,
   suggestStops as engineSuggest,
 } from '../routing';
 import { metersBetween } from '../routing/geo';
@@ -85,19 +86,25 @@ export async function suggestStops(
   return [...fromEngine, ...extras].slice(0, limit);
 }
 
-/** One route the rider can choose. `label` names the main road, such as "via Lynn Rd". */
+/** One route the rider can choose. `label` names the canyon it goes through, such as "via Lynn". */
 export interface RouteOption {
   route: Route;
   label: string;
 }
 
 /**
- * Route options for the chooser, preferred first. Today the engine returns one route, so this is a list of one.
- * When the routing engine's planRoutes lands, this returns its alternatives, each with the road it goes through.
+ * Route options for the chooser, preferred first: up to three distinct canyon routes through the same stops, each
+ * on a different main road (the engine's planRoutes). Every option is labeled with the canyon it uses.
  */
 export async function planRouteOptions(stops: readonly Stop[], request: PlanRequest): Promise<RouteOption[]> {
-  const route = await planRoute(stops, request);
-  return [{ route, label: mainRoadLabel(route) }];
+  await loadRoutingGraph();
+  const routes = enginePlanRoutes([...stops], optionsFor(request.network, request.departAt));
+  return routes.map((route) => ({ route, label: routeLabel(route) }));
+}
+
+/** The canyon a route goes through, as "via X". Falls back to "Canyon route" when no canyon is named. */
+export function routeLabel(route: Route): string {
+  return route.label && route.label !== 'Local roads' ? `via ${route.label}` : 'Canyon route';
 }
 
 /** The road the route spends the most distance on, as "via X". Falls back to "Canyon route" with no named road. */
