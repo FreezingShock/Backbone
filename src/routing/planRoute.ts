@@ -4,7 +4,7 @@ import { buildLeg, type BuiltLeg } from './legs';
 import { rollUpDifficulty } from './difficulty';
 import { findPath } from './search';
 import { FREEWAY_MOUNTAIN_WEIGHT, MOUNTAIN_ROAD_MIN, mountainWeight } from './mountain';
-import { bearingDeg } from './geo';
+import { bearingDeg, metersBetween } from './geo';
 import type { LonLat, PlanOptions, Route, RoadClass, Stop } from './types';
 
 /** The graph the planner uses. Set by loadRoutingGraph or setRoutingGraph before planning. */
@@ -38,8 +38,30 @@ const LOCAL_AVOID_WEIGHT = 3;
  * order; the first step that gives an acceptable alternative wins.
  */
 const PENALTY_STEPS = [1.5, 2.5, 4, 8, 20];
-/** Two routes that share more than this share of the shorter one are near-identical, and only one is kept. */
-const MAX_SHARED_FRACTION = 0.7;
+/**
+ * Diverging alternatives: each named road run of at least this many meters on a route already found is banned in turn,
+ * so the search must leave that road earlier or later. Runs shorter than this are too small to change a route's canyons.
+ */
+const BAN_MIN_M = 500;
+/** The most banned searches one planRoutes call makes. Each one is a full search for every leg, so this bounds the time. */
+const MAX_BAN_SEARCHES = 10;
+/**
+ * Detour alternatives: a leg is re-routed through a junction off the route. Junctions are kept only inside an ellipse
+ * around the leg (the detour may be VIA_DETOUR_FACTOR times the straight line, plus VIA_DETOUR_M), and the best one on
+ * each side of the line is tried in VIA_BINS stretches along it, so the alternatives leave the route at different points.
+ */
+const VIA_DETOUR_FACTOR = 1.3;
+const VIA_DETOUR_M = 3000;
+const VIA_BINS = 4;
+/** The most detour searches one planRoutes call makes. */
+const MAX_VIA_SEARCHES = 12;
+/** A junction counts for detours when at least this many road pieces meet there. */
+const VIA_MIN_ROADS = 3;
+/**
+ * Two routes that share more than this share of the shorter one are near-identical, and only one is kept. A route that
+ * turns off a shared road at a different junction still shares most of its distance, so this allows about a fifth to differ.
+ */
+const MAX_SHARED_FRACTION = 0.8;
 /** With mountainRoads on, an alternative must run at least this share of its distance on mountain roads. */
 const MIN_MOUNTAIN_ALTERNATIVE = 0.5;
 /** With mountainRoads on, a route may run at most this many meters on valley roads beside the 101 (access legs only). */
@@ -119,6 +141,13 @@ interface Stretch {
   end: LonLat;
 }
 
+/** A run of consecutive road pieces with the same name along a route. Banning one forces a turn off it. */
+interface Run {
+  name: string;
+  meters: number;
+  edges: number[];
+}
+
 /** Mountain roads are named canyon crossings, or pieces scoring at least MOUNTAIN_ROAD_MIN. Freeways never count. */
 function isMountainEdge(graph: RoutingGraph, edge: number): boolean {
   const cls = graph.classOf(edge);
@@ -160,6 +189,10 @@ interface Solved {
   corridorMeters: number;
   /** True when the route's main road is a named canyon crossing. */
   canyonMain: boolean;
+  /** The named road runs in route order, for the diverging alternatives. */
+  runs: Run[];
+  /** The road pieces of each leg, in order. */
+  legRefs: number[][];
 }
 
 /**
@@ -176,6 +209,8 @@ function solve(graph: RoutingGraph, stops: Stop[], nodes: number[], legRefs: num
   const crossingMeters = new Map<string, number>();
   const roadMeters = new Map<string, number>();
   const stretches: Stretch[] = [];
+  const runs: Run[] = [];
+  let run: Run | null = null;
   const edges: number[] = [];
   let highwayMeters = 0;
   let mountainMeters = 0;
@@ -198,6 +233,15 @@ function solve(graph: RoutingGraph, stops: Stop[], nodes: number[], legRefs: num
       if (crossing) crossingMeters.set(crossing, (crossingMeters.get(crossing) ?? 0) + meters);
       const name = graph.nameOf(edge);
       if (name) roadMeters.set(name, (roadMeters.get(name) ?? 0) + meters);
+      if (name && run && run.name === name) {
+        run.edges.push(edge);
+        run.meters += meters;
+      } else if (name) {
+        run = { name, meters, edges: [edge] };
+        runs.push(run);
+      } else {
+        run = null;
+      }
       if (crossing) {
         if (current && current.name === crossing) {
           current.meters += meters;
@@ -240,6 +284,8 @@ function solve(graph: RoutingGraph, stops: Stop[], nodes: number[], legRefs: num
     meters: totalMeters,
     corridorMeters,
     canyonMain: main.canyon,
+    runs,
+    legRefs,
     route: {
       stops,
       legs,
@@ -277,23 +323,82 @@ function mainRoad(crossingMeters: Map<string, number>, roadMeters: Map<string, n
   return { label: road ?? 'Local roads', canyon: false };
 }
 
-/**
- * Share of the shorter of two road sets that they have in common, by distance. Used to tell near-identical routes
- * apart from routes that take a different turn.
- */
-function sharedFraction(graph: RoutingGraph, a: Solved, b: Solved): number {
-  const inB = new Set(b.edges);
-  let shared = 0;
-  for (const edge of a.edges) if (inB.has(edge)) shared += graph.edgeMeters[edge];
-  const shorter = Math.min(a.meters, b.meters);
-  return shorter > 0 ? shared / shorter : 1;
+/** Meters per degree of longitude and latitude near the mountains. Used to measure distances between routes. */
+const KX = 111320 * Math.cos((34.1 * Math.PI) / 180);
+const KY = 110540;
+/** Two lines within this distance of each other count as the same road. Parallel or doubled lines fall inside it. */
+const NEAR_M = 40;
+/** Points are spaced at most this far apart along a line when it is measured. */
+const DENSE_STEP_M = 20;
+
+/** Points along a route, about DENSE_STEP_M apart, in meters. */
+function densePoints(line: LonLat[]): [number, number][] {
+  const points: [number, number][] = [];
+  for (let i = 0; i < line.length; i++) {
+    const x1 = line[i][0] * KX;
+    const y1 = line[i][1] * KY;
+    if (i === 0) {
+      points.push([x1, y1]);
+      continue;
+    }
+    const x0 = line[i - 1][0] * KX;
+    const y0 = line[i - 1][1] * KY;
+    const steps = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0) / DENSE_STEP_M));
+    for (let step = 1; step <= steps; step++) points.push([x0 + ((x1 - x0) * step) / steps, y0 + ((y1 - y0) * step) / steps]);
+  }
+  return points;
 }
 
-/** Cheapest path for every leg under the given weights. Throws when a leg cannot be joined at all. */
-function legPaths(graph: RoutingGraph, stops: Stop[], nodes: number[], weights: Float64Array): number[][] {
+/** Share of the length of `from` that runs within NEAR_M of `to`. */
+function nearShare(from: LonLat[], to: LonLat[]): number {
+  const cell = (x: number, y: number): string => `${Math.floor(x / NEAR_M)},${Math.floor(y / NEAR_M)}`;
+  const grid = new Map<string, [number, number][]>();
+  for (const point of densePoints(to)) {
+    const key = cell(point[0], point[1]);
+    const list = grid.get(key);
+    if (list) list.push(point);
+    else grid.set(key, [point]);
+  }
+  const points = densePoints(from);
+  let near = 0;
+  for (const [x, y] of points) {
+    const cx = Math.floor(x / NEAR_M);
+    const cy = Math.floor(y / NEAR_M);
+    let hit = false;
+    for (let dx = -1; dx <= 1 && !hit; dx++) {
+      for (let dy = -1; dy <= 1 && !hit; dy++) {
+        for (const [tx, ty] of grid.get(`${cx + dx},${cy + dy}`) ?? []) {
+          if (Math.hypot(tx - x, ty - y) <= NEAR_M) {
+            hit = true;
+            break;
+          }
+        }
+      }
+    }
+    if (hit) near++;
+  }
+  return points.length > 0 ? near / points.length : 1;
+}
+
+/**
+ * Share of the shorter of two routes that runs along the other one, measured on the drawn lines: within NEAR_M, so
+ * parallel or doubled roads count as shared. Used to tell near-identical routes apart from routes that take a different
+ * turn, which share their first and last stretches but not the middle.
+ */
+function sharedFraction(a: Solved, b: Solved): number {
+  const [shorter, longer] = a.meters <= b.meters ? [a, b] : [b, a];
+  return nearShare(shorter.route.geometry, longer.route.geometry);
+}
+
+/**
+ * Cheapest path for every leg under the given weights, skipping the road pieces marked in `banned` (when given).
+ * Throws when a leg cannot be joined.
+ */
+function legPaths(graph: RoutingGraph, stops: Stop[], nodes: number[], weights: Float64Array, banned: Uint8Array | null = null): number[][] {
+  const allow = banned ? (edge: number) => banned[edge] === 0 : () => true;
   return stops.slice(1).map((stop, i) => {
     // Route choice ignores stop and signal delays; the leg's time adds them in solve().
-    const path = findPath(graph, nodes[i], nodes[i + 1], () => true, weights, false);
+    const path = findPath(graph, nodes[i], nodes[i + 1], allow, weights, false);
     if (!path) throw new Error(`No road route from ${stops[i].name} to ${stop.name}`);
     return path.refs;
   });
@@ -318,18 +423,37 @@ function markUsed(used: Uint8Array, solved: Solved): void {
   for (const edge of solved.edges) used[edge] = 1;
 }
 
+/** solve() with some road pieces banned, or null when the banned pieces leave a stop unreachable. */
+function solveBanned(
+  graph: RoutingGraph,
+  stops: Stop[],
+  nodes: number[],
+  stopWarnings: string[],
+  options: PlanOptions,
+  weights: Float64Array,
+  banned: Uint8Array,
+): Solved | null {
+  try {
+    return solve(graph, stops, nodes, legPaths(graph, stops, nodes, weights, banned), stopWarnings, options);
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Up to `maxRoutes` (1 to 6, default 4) distinct canyon routes through the stops. The first is the cheapest route, which
- * planRoute returns. Each later one is found with the roads of the routes before it made more expensive, so it leaves
- * them at the first chance: a different canyon, or a different turn-off on the same canyon. A route is kept only when
- * it runs mostly on canyon roads, not on a freeway, has a canyon crossing as its main road, takes at most three times
- * the preferred route's time, and shares less than 70% of its road with a route already kept. With mountainRoads on, it
- * must also run at least half its distance on mountain roads and keep its valley-road distance beside the 101 short.
- * The result may hold fewer than maxRoutes.
+ * planRoute returns. The alternatives diverge from it at different points along the way, in three steps:
+ *   1. Ban a named road run of a route already found (at least BAN_MIN_M long), so the search must turn off that road
+ *      earlier or later, or ban the whole road by name.
+ *   2. Detour a leg of the best route through a junction off it, on either side of the line, at several points along.
+ *   3. Price the roads the routes so far use higher, as a fallback.
+ * A route is kept only when it runs mostly on canyon roads, not on a freeway, has a canyon crossing as its main road,
+ * takes at most three times the preferred route's time, and runs along a route already kept for less than 80% of its
+ * length (lines within 40 m count as the same road). With mountainRoads on, it must also run at least half its distance
+ * on mountain roads and keep its valley-road distance beside the 101 short. The result may hold fewer than maxRoutes.
  *
- * With mountainRoads on, the routes come back sorted by mountainShare (most mountain first), then by time. Otherwise
- * the preferred route stays first and the alternatives follow, quickest first. Every route carries its position in
- * `alternative`.
+ * The preferred route is always first. The alternatives follow: sorted by mountainShare (most mountain first) then by
+ * time with mountainRoads on, otherwise quickest first. Every route carries its position in `alternative`.
  */
 export function planRoutes(stops: Stop[], options: PlanOptions = {}): Route[] {
   const graph = requireGraph();
@@ -339,16 +463,60 @@ export function planRoutes(stops: Stop[], options: PlanOptions = {}): Route[] {
   const stopWarnings: string[] = [];
   const nodes = stops.map((stop) => nodeFor(graph, stop, stopWarnings));
 
-  const first = solve(graph, stops, nodes, legPaths(graph, stops, nodes, edgeWeights(graph, options, null, 1)), stopWarnings, options);
+  const plain = edgeWeights(graph, options, null, 1);
+  const first = solve(graph, stops, nodes, legPaths(graph, stops, nodes, plain), stopWarnings, options);
   const found: Solved[] = [first];
-  const used = new Uint8Array(graph.edgeCount);
-  markUsed(used, first);
 
+  // First, diverge mid-route: ban one named road run of a route already found, so the search must turn off that road
+  // earlier or later and take a different canyon or turn. Runs found along accepted alternatives are tried too.
+  const tried = new Set<string>();
+  let searches = 0;
+  const tryBan = (banned: Uint8Array): void => {
+    const candidate = solveBanned(graph, stops, nodes, stopWarnings, options, plain, banned);
+    if (candidate && isAlternative(candidate, found, mountainMode)) found.push(candidate);
+  };
+  for (let r = 0; r < found.length && found.length < limit && searches < MAX_BAN_SEARCHES; r++) {
+    for (const run of found[r].runs) {
+      if (found.length >= limit || searches >= MAX_BAN_SEARCHES) break;
+      if (run.meters < BAN_MIN_M) continue;
+      // Ban the stretch of the road this route uses, then the whole road by name, so the search must take another road.
+      const variants = [run.edges, namedEdges(graph, run.name)];
+      for (const edges of variants) {
+        if (found.length >= limit || searches >= MAX_BAN_SEARCHES) break;
+        const key = [...edges].sort((a, b) => a - b).join(',');
+        if (tried.has(key)) continue;
+        tried.add(key);
+        searches++;
+        const banned = new Uint8Array(graph.edgeCount);
+        for (const edge of edges) banned[edge] = 1;
+        tryBan(banned);
+      }
+    }
+  }
+
+  // Then detour: re-route a leg through a junction off the best route, so the alternative leaves that route at one point
+  // and rejoins it at another. Only the best route's legs are tried.
+  let vias = 0;
+  for (let leg = 0; leg < stops.length - 1; leg++) {
+    const avoid = nodesOf(graph, first.legRefs[leg]);
+    for (const via of viaNodes(graph, nodes[leg], nodes[leg + 1], avoid)) {
+      if (found.length >= limit || vias >= MAX_VIA_SEARCHES) break;
+      vias++;
+      const refs = viaRefs(graph, nodes[leg], via, nodes[leg + 1], plain);
+      if (!refs) continue;
+      const candidate = solve(graph, stops, nodes, first.legRefs.map((item, k) => (k === leg ? refs : item)), stopWarnings, options);
+      if (isAlternative(candidate, found, mountainMode)) found.push(candidate);
+    }
+  }
+
+  // Then, if there is still room, price the roads the routes so far use higher, so the next search leaves them.
+  const used = new Uint8Array(graph.edgeCount);
+  for (const item of found) markUsed(used, item);
   while (found.length < limit) {
     let accepted: Solved | null = null;
     for (const factor of PENALTY_STEPS) {
       const candidate = solve(graph, stops, nodes, legPaths(graph, stops, nodes, edgeWeights(graph, options, used, factor)), stopWarnings, options);
-      if (isAlternative(graph, candidate, found, mountainMode)) {
+      if (isAlternative(candidate, found, mountainMode)) {
         accepted = candidate;
         break;
       }
@@ -358,14 +526,83 @@ export function planRoutes(stops: Stop[], options: PlanOptions = {}): Route[] {
     markUsed(used, accepted);
   }
 
+  // The preferred route stays first, so the fastest canyon route is still the one planRoute returns. The alternatives
+  // follow: most mountain first with mountain mode on, otherwise quickest first.
   const routes = found.map((item) => item.route);
-  const ordered = mountainMode
-    ? [...routes].sort((a, b) => (b.mountainShare ?? 0) - (a.mountainShare ?? 0) || a.durationS - b.durationS)
-    : [routes[0], ...routes.slice(1).sort((a, b) => a.durationS - b.durationS)];
-  return ordered.map((route, index) => ({ ...route, alternative: index }));
+  const rest = routes
+    .slice(1)
+    .sort((a, b) => (mountainMode ? (b.mountainShare ?? 0) - (a.mountainShare ?? 0) : 0) || a.durationS - b.durationS);
+  return [routes[0], ...rest].map((route, index) => ({ ...route, alternative: index }));
 }
 
-function isAlternative(graph: RoutingGraph, candidate: Solved, found: Solved[], mountainMode: boolean): boolean {
+/**
+ * Junctions a leg can detour through, off the given route nodes: the best one on each side of the straight line in
+ * each of VIA_BINS stretches along it, inside the detour ellipse. Points are compared in a flat frame, which is close
+ * enough at this scale.
+ */
+function viaNodes(graph: RoutingGraph, from: number, to: number, avoid: Set<number>): number[] {
+  const sx = graph.lon[from];
+  const sy = graph.lat[from];
+  const ex = graph.lon[to];
+  const ey = graph.lat[to];
+  const budget = metersBetween([sx, sy], [ex, ey]) * VIA_DETOUR_FACTOR + VIA_DETOUR_M;
+  const kx = Math.cos((((sy + ey) / 2) * Math.PI) / 180);
+  const dx = (ex - sx) * kx;
+  const dy = ey - sy;
+  const lengthSq = dx * dx + dy * dy || 1;
+  const best: ({ node: number; detour: number } | null)[] = new Array(VIA_BINS * 2).fill(null);
+  for (let node = 0; node < graph.nodeCount; node++) {
+    if (avoid.has(node)) continue;
+    const degree = graph.adjacencyOffset[node + 1] - graph.adjacencyOffset[node];
+    if (degree < VIA_MIN_ROADS) continue;
+    const vx = graph.lon[node];
+    const vy = graph.lat[node];
+    const detour = metersBetween([sx, sy], [vx, vy]) + metersBetween([vx, vy], [ex, ey]);
+    if (detour > budget) continue;
+    const px = (vx - sx) * kx;
+    const py = vy - sy;
+    const along = (px * dx + py * dy) / lengthSq;
+    if (along <= 0.1 || along >= 0.9) continue;
+    const bin = Math.floor(((along - 0.1) / 0.8) * VIA_BINS);
+    const side = dx * py - dy * px > 0 ? 1 : 0;
+    const slot = best[bin * 2 + side];
+    if (!slot || detour < slot.detour) best[bin * 2 + side] = { node, detour };
+  }
+  return best.flatMap((slot) => (slot ? [slot.node] : []));
+}
+
+/** The road pieces from one node to another through a junction, or null when they do not join without reusing a piece. */
+function viaRefs(graph: RoutingGraph, from: number, via: number, to: number, weights: Float64Array): number[] | null {
+  const first = findPath(graph, from, via, () => true, weights, false);
+  const second = first && findPath(graph, via, to, () => true, weights, false);
+  if (!second) return null;
+  const refs = [...first!.refs, ...second.refs];
+  const seen = new Set<number>();
+  for (const ref of refs) {
+    if (seen.has(ref >> 1)) return null;
+    seen.add(ref >> 1);
+  }
+  return refs;
+}
+
+/** Every node a route passes through. */
+function nodesOf(graph: RoutingGraph, refs: number[]): Set<number> {
+  const set = new Set<number>();
+  for (const ref of refs) {
+    set.add(graph.startOf(ref));
+    set.add(graph.endOf(ref));
+  }
+  return set;
+}
+
+/** Every road piece with this name, in the whole graph. */
+function namedEdges(graph: RoutingGraph, name: string): number[] {
+  const edges: number[] = [];
+  for (let edge = 0; edge < graph.edgeCount; edge++) if (graph.nameOf(edge) === name) edges.push(edge);
+  return edges;
+}
+
+function isAlternative(candidate: Solved, found: Solved[], mountainMode: boolean): boolean {
   if (!candidate.canyonMain) return false;
   if ((candidate.route.highwayShare ?? 0) > ALTERNATIVE_MAX_HIGHWAY_SHARE) return false;
   if (candidate.route.durationS > found[0].route.durationS * MAX_ALTERNATIVE_TIME_FACTOR) return false;
@@ -373,5 +610,5 @@ function isAlternative(graph: RoutingGraph, candidate: Solved, found: Solved[], 
     if ((candidate.route.mountainShare ?? 0) < MIN_MOUNTAIN_ALTERNATIVE) return false;
     if (candidate.corridorMeters > MAX_CORRIDOR_M) return false;
   }
-  return found.every((other) => sharedFraction(graph, candidate, other) < MAX_SHARED_FRACTION);
+  return found.every((other) => sharedFraction(candidate, other) < MAX_SHARED_FRACTION);
 }

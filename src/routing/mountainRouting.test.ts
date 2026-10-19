@@ -57,6 +57,7 @@ const VALLEY_ARTERIAL = /^(Thousand Oaks Blvd|Ventura Blvd)$/;
 const TRIPS: [string, string][] = [
   ['newbury-park', 'woodland-hills'],
   ['newbury-park', 'malibu'],
+  ['newbury-park', 'calabasas'],
   ['calabasas', 'thousand-oaks'],
   ['woodland-hills', 'westlake-village'],
 ];
@@ -145,12 +146,27 @@ for (const [a, b] of TRIPS) {
   });
 }
 
-test('mountain mode sorts the routes most mountain-heavy first', () => {
+test('mountain mode keeps the preferred route first, then sorts the alternatives most mountain-heavy first', () => {
   setRoutingGraph(REAL_GRAPH);
   const routes = planRoutes([PLACE('newbury-park'), PLACE('malibu')], MOUNTAIN_OPTIONS);
-  for (let i = 1; i < routes.length; i++) {
-    assert.ok((routes[i - 1].mountainShare ?? 0) >= (routes[i].mountainShare ?? 0), 'mountainShare is non-increasing');
+  assert.equal(routes[0].alternative, 0);
+  for (let i = 2; i < routes.length; i++) {
+    assert.ok((routes[i - 1].mountainShare ?? 0) >= (routes[i].mountainShare ?? 0), 'alternatives: mountainShare is non-increasing');
   }
+});
+
+test('Newbury Park to Calabasas finds diverging alternatives: a different turn mid-route, up to four routes, all mountain', () => {
+  setRoutingGraph(REAL_GRAPH);
+  const routes = planRoutes([PLACE('newbury-park'), PLACE('calabasas')], MOUNTAIN_OPTIONS);
+  assert.ok(routes.length >= 3 && routes.length <= 4, `expected 3 or 4 routes, got ${routes.length}`);
+  for (const route of routes) {
+    assert.equal(route.highwayShare ?? 0, 0, `"${route.summary}" uses a freeway`);
+    assert.ok((route.mountainShare ?? 0) >= 0.5, `"${route.summary}" is ${(route.mountainShare ?? 0).toFixed(2)} mountain`);
+  }
+  // The alternatives share the start of the preferred route, then take a different turn on Westlake Blvd.
+  const labels = routes.map((route) => route.summary);
+  assert.equal(new Set(labels).size, labels.length, `labels repeat: ${labels.join(' | ')}`);
+  assert.ok(labels.some((label) => /Westlake Blvd north/.test(label ?? '')), `no Westlake Blvd north turn in ${labels.join(' | ')}`);
 });
 
 test('all roads mode keeps the class-based fastest routing, with no mountain scoring applied', () => {

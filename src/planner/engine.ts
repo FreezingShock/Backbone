@@ -93,13 +93,32 @@ export interface RouteOption {
 }
 
 /**
- * Route options for the chooser, preferred first: up to three distinct canyon routes through the same stops, each
+ * Route options for the chooser, preferred first: up to four distinct canyon routes through the same stops, each
  * on a different main road (the engine's planRoutes). Every option is labeled with the canyon it uses.
  */
 export async function planRouteOptions(stops: readonly Stop[], request: PlanRequest): Promise<RouteOption[]> {
   await loadRoutingGraph();
   const routes = enginePlanRoutes([...stops], optionsFor(request.network, request.departAt));
-  return routes.map((route) => ({ route, label: routeLabel(route) }));
+  return distinctLabels(routes);
+}
+
+/**
+ * Labels for the chooser that tell routes apart. Two routes can name the same canyons in the same order and differ only
+ * in a later turn, so a repeated label gets the route's main road after it, and a label still repeated gets its number.
+ */
+function distinctLabels(routes: Route[]): RouteOption[] {
+  const plain = routes.map(routeLabel);
+  const count = (labels: string[], label: string): number => labels.filter((item) => item === label).length;
+  const labels = plain.map((label, index) =>
+    count(plain, label) > 1 && routes[index].label && routes[index].label !== 'Local roads' ? `${label} (${routes[index].label})` : label,
+  );
+  const seen = new Map<string, number>();
+  return routes.map((route, index) => {
+    const label = labels[index];
+    const repeat = (seen.get(label) ?? 0) + 1;
+    seen.set(label, repeat);
+    return { route, label: count(labels, label) > 1 ? `${label} ${repeat}` : label };
+  });
 }
 
 /**
