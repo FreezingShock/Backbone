@@ -14,6 +14,7 @@ import { LayerPanel } from './ui/LayerPanel';
 import { StylePanel } from './ui/StylePanel';
 import { TitleCartouche } from './ui/TitleCartouche';
 import { Toolbar } from './ui/Toolbar';
+import { RoutePlanner } from './planner/RoutePlanner';
 
 function defaultVisibility(): Record<string, boolean> {
   return Object.fromEntries(mapLayers.map((layer) => [layer.id, layer.defaultVisible]));
@@ -68,6 +69,7 @@ export default function App() {
         onPick={pick}
       />
       <PlaceCard onFlyTo={goTo} />
+      <RoutePlanner viewer={viewer} look={look} />
 
       <aside className="absolute top-4 right-4 bottom-36 flex w-64 flex-col gap-3">
         <StylePanel
