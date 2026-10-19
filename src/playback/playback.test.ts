@@ -71,6 +71,7 @@ function twoLegRoute(): Route {
     geometry: [],
     departAt: '2026-10-19T00:00:00.000Z',
     arriveAt: '2026-10-19T00:07:00.000Z',
+    warnings: [],
   };
 }
 
@@ -206,7 +207,7 @@ test('maneuvers come from bends and road-name changes along one path', () => {
     [-118.5, 34.22],
   ];
   const names = ['Mulholland', 'Mulholland', 'Encinal', 'Encinal'];
-  const steps = deriveManeuvers(points, names);
+  const steps = deriveManeuvers(points, names).map((m) => m.step);
   // Heading east, then north, is a left turn.
   assert.equal(steps[0].kind, 'turn-left');
   assert.equal(steps[0].roadName, 'Encinal');
@@ -220,7 +221,7 @@ test('maneuvers come from bends and road-name changes along one path', () => {
     ],
     ['A', 'B'],
   );
-  assert.equal(straightPath[0].kind, 'straight');
+  assert.equal(straightPath[0].step.kind, 'straight');
 });
 
 test('sample route assembles legs, depart and arrive steps, and an arrival time', () => {
@@ -253,6 +254,10 @@ test('sample route assembles legs, depart and arrive steps, and an arrival time'
   assert.equal(route.legs.length, 1);
   assert.equal(route.legs[0].steps[0].kind, 'depart');
   assert.equal(route.legs[0].steps[route.legs[0].steps.length - 1].kind, 'arrive');
+  // Each step's distance runs to the next step, so the depart covers the road to the first maneuver.
+  const withDistance = route.legs[0].steps.slice(0, -1);
+  for (const step of withDistance) assert.ok(step.distanceM >= 0);
+  assert.equal(route.legs[0].steps[route.legs[0].steps.length - 1].distanceM, 0);
   assert.equal(route.arriveAt, new Date(departAt.getTime() + route.durationS * 1000).toISOString());
 });
 
