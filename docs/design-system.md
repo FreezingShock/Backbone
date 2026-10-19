@@ -27,7 +27,7 @@ Do not write hex colors in components. Map colors are the exception, and they li
 
 ## Type
 
-- **Anthropic Serif** (licensed, not open source): the first entry in the serif stack, once its files are present. Files go in `public/fonts/anthropic-serif/` (woff2 preferred), and the `@font-face` rules are in `src/styles/anthropic-serif.css`. Until the files are there, the site uses IM Fell English, so nothing changes. The font is licensed to the project owner and is not covered by this repo's open-source terms. Check the license before the site is shared publicly.
+- **Anthropic Serif** (licensed, not open source): the first entry in the serif stack. The Display cut is in Regular (400) and Light (300), in `public/fonts/anthropic-serif/` as woff2, with the `@font-face` rules in `src/styles/anthropic-serif.css`. If a face is missing, the stack falls through to IM Fell English. The font is licensed to the project owner and is not covered by this repo's open-source terms. Check the license before the site is shared publicly.
 - **IM Fell English** (serif, OFL): the fallback serif. Wordmark, panel titles, place names, the title cartouche.
 - **IBM Plex Mono** (OFL): controls, data, labels for roads, status.
 

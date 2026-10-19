@@ -1,18 +1,27 @@
 /*
  * Anthropic Serif: licensed, not open source. See docs/design-system.md.
  *
- * The font files live in public/fonts/anthropic-serif/. Until they are there,
- * the serif stack falls through to IM Fell English, so nothing looks different.
+ * The faces are the "Anthropic Serif Display" cut, served from
+ * public/fonts/anthropic-serif/. They are registered under the family name
+ * "Anthropic Serif", which is first in the serif stack in index.css. Any face
+ * missing from that folder falls through to IM Fell English.
  *
- * The faces are kept here as a template, not live rules. A rule for a missing
- * file makes the browser request it on every page load and log a 404. To
- * activate a face, add the file, check its exact name, and uncomment its block:
- *
- * @font-face {
- *   font-family: "Anthropic Serif";
- *   src: url("/fonts/anthropic-serif/AnthropicSerif-Regular.woff2") format("woff2");
- *   font-weight: 400;
- *   font-style: normal;
- *   font-display: swap;
- * }
+ * To add a weight, copy its woff2 into that folder and add a block here.
+ * Keep the file name exact, and add the family to LABEL_FONTS in
+ * src/map/MapView.tsx so canvas labels wait for it.
  */
+@font-face {
+  font-family: "Anthropic Serif";
+  src: url("/fonts/anthropic-serif/AnthropicSerifDisplay-Light.woff2") format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Anthropic Serif";
+  src: url("/fonts/anthropic-serif/AnthropicSerifDisplay-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
